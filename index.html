@@ -31,6 +31,10 @@
             <input id="searchInput" class="w-64 bg-transparent text-sm outline-none placeholder:text-zinc-500" placeholder="Search..." />
           </div>
 
+          <button id="uploadBtn" class="rounded-xl border border-sky-500/30 bg-sky-500/10 px-3 py-2 text-sm text-sky-200 hover:bg-sky-500/20 font-medium">
+            📤 Upload
+          </button>
+
           <button id="peopleToggle" class="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm hover:bg-white/10">
             People
           </button>
@@ -39,6 +43,9 @@
             Clear
           </button>
         </div>
+        
+        <!-- Hidden file input -->
+        <input type="file" id="fileInput" accept="image/*" multiple class="hidden" />
       </div>
     </header>
 
@@ -148,31 +155,73 @@
 
     <script>
       // ---------------------------
-      // Dummy photos (real images)
+      // API Configuration
       // ---------------------------
-      const base = (id, w, h) => `https://picsum.photos/id/${id}/${w}/${h}`;
-      const thumb = (id) => base(id, 700, 700);
-      const full = (id) => base(id, 1800, 1200);
+      const API_BASE = 'http://localhost:3000';
+      
+      // ---------------------------
+      // Photos data
+      // ---------------------------
+      let photos = [];
 
-      // Use ids that often include people. Not perfect, but better odds.
-      const photos = [
-        { id: 64,  title: "Street",   meta: "Feb 11, 2026 • Kolkata" },
-        { id: 91,  title: "Portrait", meta: "Feb 10, 2026 • Studio" },
-        { id: 219, title: "Friends",  meta: "Feb 09, 2026 • Hangout" },
-        { id: 342, title: "Crowd",    meta: "Feb 08, 2026 • City" },
-        { id: 823, title: "Walk",     meta: "Feb 07, 2026 • Outdoors" },
-        { id: 1027, title: "Cafe",    meta: "Feb 06, 2026 • Cafe" },
-        { id: 1005, title: "Road",    meta: "Feb 05, 2026 • Highway" },
-        { id: 1025, title: "Light",   meta: "Feb 04, 2026 • Night" },
-        { id: 1009, title: "Moment",  meta: "Feb 03, 2026 • Day" },
-        { id: 1011, title: "Calm",    meta: "Feb 02, 2026 • Home" },
-        { id: 1012, title: "Motion",  meta: "Feb 01, 2026 • Outdoors" },
-        { id: 1013, title: "Frame",   meta: "Jan 31, 2026 • Studio" },
-      ].map(p => ({
-        ...p,
-        thumbSrc: thumb(p.id),
-        fullSrc: full(p.id),
-      }));
+      // ---------------------------
+      // API Functions
+      // ---------------------------
+      async function loadPhotos() {
+        try {
+          const response = await fetch(`${API_BASE}/api/photos`);
+          const data = await response.json();
+          
+          if (data.success) {
+            photos = data.photos.map(p => ({
+              ...p,
+              thumbSrc: `${API_BASE}${p.thumbSrc}`,
+              fullSrc: `${API_BASE}${p.fullSrc}`,
+            }));
+            render();
+          }
+        } catch (error) {
+          console.error('Error loading photos:', error);
+          resultCount.textContent = 'Error loading photos. Make sure the server is running on port 3000.';
+        }
+      }
+
+      async function uploadPhotos(files) {
+        if (!files || files.length === 0) return;
+
+        const formData = new FormData();
+        
+        for (let file of files) {
+          formData.append('images', file);
+        }
+
+        try {
+          const uploadBtn = document.getElementById('uploadBtn');
+          uploadBtn.disabled = true;
+          uploadBtn.textContent = 'Uploading...';
+
+          const response = await fetch(`${API_BASE}/api/upload`, {
+            method: 'POST',
+            body: formData
+          });
+
+          const data = await response.json();
+
+          if (data.success) {
+            alert(`✅ ${data.message}`);
+            await loadPhotos();
+          } else {
+            alert(`❌ Upload failed: ${data.error}`);
+          }
+        } catch (error) {
+          console.error('Upload error:', error);
+          alert(`❌ Upload failed: ${error.message}`);
+        } finally {
+          const uploadBtn = document.getElementById('uploadBtn');
+          uploadBtn.disabled = false;
+          uploadBtn.textContent = '📤 Upload';
+        }
+      }
 
       // ---------------------------
       // UI state
@@ -194,6 +243,8 @@
       const resultCount = document.getElementById("resultCount");
       const searchInput = document.getElementById("searchInput");
       const clearSearch = document.getElementById("clearSearch");
+      const uploadBtn = document.getElementById("uploadBtn");
+      const fileInput = document.getElementById("fileInput");
 
       const viewer = document.getElementById("viewer");
       const backdrop = document.getElementById("backdrop");
@@ -515,6 +566,19 @@
       // ---------------------------
       // Event wiring
       // ---------------------------
+      uploadBtn.addEventListener("click", () => {
+        fileInput.click();
+      });
+
+      fileInput.addEventListener("change", (e) => {
+        const files = Array.from(e.target.files);
+        if (files.length > 0) {
+          uploadPhotos(files);
+        }
+        // Reset input so same file can be uploaded again
+        e.target.value = '';
+      });
+
       if (searchInput) {
         searchInput.addEventListener("input", (e) => {
           query = e.target.value;
@@ -561,7 +625,7 @@
 
       // Init
       thresholdVal.textContent = Number(threshold.value).toFixed(2);
-      render();
+      loadPhotos(); // Load photos from server on startup
     </script>
   </body>
 </html>
