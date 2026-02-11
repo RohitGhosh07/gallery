@@ -17,12 +17,42 @@
       }
       .photo-card {
         transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: pointer;
       }
       .photo-card:hover {
         transform: scale(1.02);
       }
+      .photo-card:active {
+        transform: scale(0.98);
+      }
       body {
         padding-bottom: env(safe-area-inset-bottom);
+      }
+      #imageModal {
+        transition: opacity 0.2s ease-in-out;
+        opacity: 0;
+      }
+      #imageModal.flex {
+        opacity: 1;
+      }
+      #modalImage {
+        animation: scaleIn 0.2s ease-out;
+      }
+      @keyframes scaleIn {
+        from {
+          transform: scale(0.95);
+          opacity: 0;
+        }
+        to {
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+      /* Improve mobile touch */
+      @media (max-width: 640px) {
+        .photo-card:active {
+          transform: scale(0.95);
+        }
       }
     </style>
   </head>
@@ -536,5 +566,70 @@
         </button>
       </div>
     </nav>
+
+    <!-- Full-Screen Image Modal -->
+    <div id="imageModal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/95 backdrop-blur-sm">
+      <button onclick="closeModal()" class="absolute right-4 top-4 z-10 rounded-full bg-white/10 p-3 text-white transition-all hover:bg-white/20 active:scale-95">
+        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+      <img id="modalImage" src="" alt="Full screen" class="max-h-[90vh] max-w-[95vw] object-contain" onclick="event.stopPropagation()" />
+    </div>
+
+    <script>
+      // Full-screen image viewer
+      function openModal(imageSrc) {
+        const modal = document.getElementById('imageModal');
+        const modalImage = document.getElementById('modalImage');
+        modalImage.src = imageSrc.replace('w=400&h=400', 'w=1200&h=1200').replace('w=300&h=300', 'w=1200&h=1200');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        document.body.style.overflow = 'hidden';
+        
+        // Animate in
+        setTimeout(() => {
+          modal.style.opacity = '1';
+        }, 10);
+      }
+
+      function closeModal() {
+        const modal = document.getElementById('imageModal');
+        modal.style.opacity = '0';
+        setTimeout(() => {
+          modal.classList.add('hidden');
+          modal.classList.remove('flex');
+          document.body.style.overflow = '';
+        }, 200);
+      }
+
+      // Close on background click
+      document.getElementById('imageModal').addEventListener('click', closeModal);
+
+      // Close on escape key
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeModal();
+      });
+
+      // Add click handlers to all photo cards
+      document.addEventListener('DOMContentLoaded', () => {
+        const photoCards = document.querySelectorAll('.photo-card');
+        photoCards.forEach(card => {
+          card.addEventListener('click', (e) => {
+            e.preventDefault();
+            const img = card.querySelector('img');
+            if (img) openModal(img.src);
+          });
+        });
+
+        // Prevent favorite and more buttons from opening modal
+        const buttons = document.querySelectorAll('.photo-card button');
+        buttons.forEach(button => {
+          button.addEventListener('click', (e) => {
+            e.stopPropagation();
+          });
+        });
+      });
+    </script>
   </body>
 </html>
