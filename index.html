@@ -90,9 +90,6 @@
         <div class="flex items-center gap-2">
           <button id="selectAllBtn" class="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm hover:bg-white/10">Select all</button>
           <button id="clearSelectionBtn" class="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm hover:bg-white/10">Clear</button>
-          <button id="deleteSelectedBtn" class="rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-200 hover:bg-rose-500/20">
-            Delete
-          </button>
         </div>
       </div>
     </div>
@@ -264,7 +261,6 @@
       const selectedCount = document.getElementById("selectedCount");
       const selectAllBtn = document.getElementById("selectAllBtn");
       const clearSelectionBtn = document.getElementById("clearSelectionBtn");
-      const deleteSelectedBtn = document.getElementById("deleteSelectedBtn");
 
       const uploadBtn = document.getElementById("uploadBtn");
       const fileInput = document.getElementById("fileInput");
@@ -598,20 +594,6 @@
 
       clearSelectionBtn.addEventListener("click", () => {
         selected.clear();
-        updateSelectionUI();
-        render();
-      });
-
-      deleteSelectedBtn.addEventListener("click", () => {
-        if (selected.size === 0) return;
-        if (!confirm(`Delete ${selected.size} photo(s)? This cannot be undone.`)) return;
-        
-        // mutate photos array in-place (since it's const, we splice)
-        for (let i = photos.length - 1; i >= 0; i--) {
-          if (selected.has(photos[i].id)) photos.splice(i, 1);
-        }
-        selected.clear();
-        savePhotos();
         updateSelectionUI();
         render();
       });
