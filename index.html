@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Sleek Gallery + People (Face Match)</title>
+    <title>Drive Gallery + Fullscreen + People (Face Match)</title>
     <script src="https://cdn.tailwindcss.com"></script>
 
-    <!-- FaceAPI (bundled) -->
+    <!-- FaceAPI -->
     <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api@0.30.5/dist/face-api.js"></script>
   </head>
 
@@ -18,7 +18,7 @@
           <div class="h-9 w-9 rounded-xl bg-gradient-to-br from-sky-500 to-indigo-500"></div>
           <div class="leading-tight">
             <p class="text-sm font-semibold">Gallery</p>
-            <p class="text-xs text-zinc-400">Dummy photos • Fullscreen slider • People</p>
+            <p id="statusLine" class="text-xs text-zinc-400">Loading Drive images…</p>
           </div>
         </div>
 
@@ -31,10 +31,6 @@
             <input id="searchInput" class="w-64 bg-transparent text-sm outline-none placeholder:text-zinc-500" placeholder="Search..." />
           </div>
 
-          <button id="uploadBtn" class="rounded-xl border border-sky-500/30 bg-sky-500/10 px-3 py-2 text-sm text-sky-200 hover:bg-sky-500/20 font-medium">
-            📤 Upload
-          </button>
-
           <button id="peopleToggle" class="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm hover:bg-white/10">
             People
           </button>
@@ -43,9 +39,6 @@
             Clear
           </button>
         </div>
-        
-        <!-- Hidden file input -->
-        <input type="file" id="fileInput" accept="image/*" multiple class="hidden" />
       </div>
     </header>
 
@@ -56,7 +49,7 @@
           <div>
             <p class="text-sm font-semibold">People</p>
             <p id="peopleSub" class="text-xs text-zinc-400">
-              Detect faces → cluster similar faces → click a person to filter.
+              Detect faces → match → click a person to filter.
             </p>
           </div>
 
@@ -98,7 +91,7 @@
       <div id="grid" class="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5"></div>
 
       <footer class="py-10 text-center text-xs text-zinc-500">
-        Yes, this does face matching in-browser. No, it’s not free performance-wise.
+        Runs locally. Uses Drive API to list images. Face matching is CPU-heavy because browsers are not supercomputers.
       </footer>
     </main>
 
@@ -112,23 +105,13 @@
           <p id="vMeta" class="truncate text-xs text-zinc-400"></p>
         </div>
 
-        <div class="flex items-center gap-2">
-          <button
-            id="viewerDeleteBtn"
-            class="rounded-full border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-200 hover:bg-red-500/20"
-            title="Delete photo"
-          >
-            🗑️ Delete
-          </button>
-          
-          <button
-            id="closeBtn"
-            class="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-sm text-zinc-200 hover:bg-white/10"
-            title="Close (Esc)"
-          >
-            ✕
-          </button>
-        </div>
+        <button
+          id="closeBtn"
+          class="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-sm text-zinc-200 hover:bg-white/10"
+          title="Close (Esc)"
+        >
+          ✕
+        </button>
       </div>
 
       <div class="absolute inset-0 flex items-center justify-center">
@@ -164,116 +147,74 @@
     </div>
 
     <script>
-      // ---------------------------
-      // API Configuration
-      // ---------------------------
-      const API_BASE = 'http://localhost:3000';
-      
-      // ---------------------------
-      // Photos data
-      // ---------------------------
-      let photos = [];
+      // =========================================================
+      // CONFIG: Put your Google API key here
+      // =========================================================
+      const FOLDER_ID = "1T9P69xchFY4_NX7__eg7gXVTOyXT1ppm";
+      const API_KEY = "AIzaSyDq1zUnvwrQoOKh9yJPh38zqz6HOvBvCIU"; // <-- change this
 
-      // ---------------------------
-      // API Functions
-      // ---------------------------
-      async function loadPhotos() {
-        try {
-          const response = await fetch(`${API_BASE}/api/photos`);
-          const data = await response.json();
-          
-          if (data.success) {
-            photos = data.photos.map(p => ({
-              ...p,
-              thumbSrc: `${API_BASE}${p.thumbSrc}`,
-              fullSrc: `${API_BASE}${p.fullSrc}`,
-            }));
-            render();
+      // =========================================================
+      // Drive helpers
+      // =========================================================
+      const driveView = (fileId) => `https://drive.google.com/uc?export=view&id=${fileId}`;
+
+      async function listDriveImages(folderId) {
+        // NOTE: This requires the folder/files to be shared as "Anyone with the link: Viewer"
+        const q = `'${folderId}' in parents and trashed=false and mimeType contains 'image/'`;
+        const fields = "nextPageToken,files(id,name,mimeType,createdTime,modifiedTime)";
+        const pageSize = 1000;
+
+        let out = [];
+        let pageToken = "";
+
+        while (true) {
+          const url =
+            `https://www.googleapis.com/drive/v3/files` +
+            `?key=${encodeURIComponent(API_KEY)}` +
+            `&q=${encodeURIComponent(q)}` +
+            `&fields=${encodeURIComponent(fields)}` +
+            `&pageSize=${pageSize}` +
+            (pageToken ? `&pageToken=${encodeURIComponent(pageToken)}` : "");
+
+          const res = await fetch(url);
+          if (!res.ok) {
+            const txt = await res.text().catch(() => "");
+            throw new Error(`Drive API error ${res.status}: ${txt || "no details"}`);
           }
-        } catch (error) {
-          console.error('Error loading photos:', error);
-          resultCount.textContent = 'Error loading photos. Make sure the server is running on port 3000.';
+
+          const data = await res.json();
+          out = out.concat(data.files || []);
+          if (!data.nextPageToken) break;
+          pageToken = data.nextPageToken;
         }
+
+        // Sort newest first by modifiedTime (fallback createdTime)
+        out.sort((a, b) => (b.modifiedTime || b.createdTime || "").localeCompare(a.modifiedTime || a.createdTime || ""));
+        return out;
       }
 
-      async function uploadPhotos(files) {
-        if (!files || files.length === 0) return;
-
-        const formData = new FormData();
-        
-        for (let file of files) {
-          formData.append('images', file);
-        }
-
-        try {
-          const uploadBtn = document.getElementById('uploadBtn');
-          uploadBtn.disabled = true;
-          uploadBtn.textContent = 'Uploading...';
-
-          const response = await fetch(`${API_BASE}/api/upload`, {
-            method: 'POST',
-            body: formData
-          });
-
-          const data = await response.json();
-
-          if (data.success) {
-            alert(`✅ ${data.message}`);
-            await loadPhotos();
-          } else {
-            alert(`❌ Upload failed: ${data.error}`);
-          }
-        } catch (error) {
-          console.error('Upload error:', error);
-          alert(`❌ Upload failed: ${error.message}`);
-        } finally {
-          const uploadBtn = document.getElementById('uploadBtn');
-          uploadBtn.disabled = false;
-          uploadBtn.textContent = '📤 Upload';
-        }
-      }
-
-      async function deletePhoto(photoId) {
-        try {
-          const response = await fetch(`${API_BASE}/api/photos/${photoId}`, {
-            method: 'DELETE'
-          });
-
-          const data = await response.json();
-
-          if (data.success) {
-            await loadPhotos();
-          } else {
-            alert(`❌ Delete failed: ${data.error}`);
-          }
-        } catch (error) {
-          console.error('Delete error:', error);
-          alert(`❌ Delete failed: ${error.message}`);
-        }
-      }
-
-      // ---------------------------
-      // UI state
-      // ---------------------------
+      // =========================================================
+      // UI State
+      // =========================================================
+      let photos = [];             // loaded from Drive
       let query = "";
-      let peopleFilter = null; // clusterId or null
-      let filtered = [...photos];
+      let peopleFilter = null;     // clusterId or null
+      let filtered = [];
       let currentIndex = -1;
 
-      // People analysis cache
+      // Face analysis cache
       let modelsLoaded = false;
       let analyzing = false;
       let faceIndex = null; // { clusters: [...], photoFaces: Map(photoKey -> [clusterId...]) }
 
-      // ---------------------------
+      // =========================================================
       // Elements
-      // ---------------------------
+      // =========================================================
+      const statusLine = document.getElementById("statusLine");
       const grid = document.getElementById("grid");
       const resultCount = document.getElementById("resultCount");
       const searchInput = document.getElementById("searchInput");
       const clearSearch = document.getElementById("clearSearch");
-      const uploadBtn = document.getElementById("uploadBtn");
-      const fileInput = document.getElementById("fileInput");
 
       const viewer = document.getElementById("viewer");
       const backdrop = document.getElementById("backdrop");
@@ -298,9 +239,9 @@
       const threshold = document.getElementById("threshold");
       const thresholdVal = document.getElementById("thresholdVal");
 
-      // ---------------------------
+      // =========================================================
       // Gallery filtering
-      // ---------------------------
+      // =========================================================
       function matchesText(p) {
         if (!query.trim()) return true;
         const q = query.trim().toLowerCase();
@@ -320,55 +261,42 @@
         resultCount.textContent = `${filtered.length} items`;
 
         grid.innerHTML = filtered.map((p, i) => `
-          <div class="group relative aspect-square overflow-hidden rounded-2xl border border-white/10 bg-white/5">
-            <button
-              class="absolute inset-0 w-full h-full"
-              data-index="${i}"
-              title="${p.title}"
-            >
-              <img
-                src="${p.thumbSrc}"
-                alt="${p.title}"
-                class="h-full w-full object-cover opacity-90 transition group-hover:opacity-100"
-                loading="lazy"
-                crossorigin="anonymous"
-              />
-              <div class="absolute inset-0 opacity-0 transition group-hover:opacity-100">
-                <div class="absolute inset-0 bg-black/25"></div>
-                <div class="absolute bottom-3 left-3 text-xs text-zinc-100">
-                  <p class="font-medium">${p.title}</p>
-                  <p class="text-zinc-300">${p.meta}</p>
-                </div>
+          <button
+            class="group relative aspect-square overflow-hidden rounded-2xl border border-white/10 bg-white/5"
+            data-index="${i}"
+            title="${escapeHtml(p.title)}"
+          >
+            <img
+              src="${p.thumbSrc}"
+              alt="${escapeHtml(p.title)}"
+              class="h-full w-full object-cover opacity-90 transition group-hover:opacity-100"
+              loading="lazy"
+              crossorigin="anonymous"
+            />
+            <div class="absolute inset-0 opacity-0 transition group-hover:opacity-100">
+              <div class="absolute inset-0 bg-black/25"></div>
+              <div class="absolute bottom-3 left-3 text-xs text-zinc-100">
+                <p class="font-medium">${escapeHtml(p.title)}</p>
+                <p class="text-zinc-300">${escapeHtml(p.meta)}</p>
               </div>
-            </button>
-            <button
-              class="absolute top-2 right-2 z-10 rounded-lg bg-red-500/80 p-2 opacity-0 transition hover:bg-red-600 group-hover:opacity-100"
-              data-delete-id="${p.id}"
-              title="Delete photo"
-              onclick="event.stopPropagation();"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6"/>
-              </svg>
-            </button>
-          </div>
+            </div>
+          </button>
         `).join("");
 
         grid.querySelectorAll("button[data-index]").forEach(btn => {
           btn.addEventListener("click", () => openViewer(Number(btn.dataset.index)));
         });
-
-        grid.querySelectorAll("button[data-delete-id]").forEach(btn => {
-          btn.addEventListener("click", async () => {
-            const photoId = Number(btn.dataset.deleteId);
-            await deletePhoto(photoId);
-          });
-        });
       }
 
-      // ---------------------------
+      function escapeHtml(s) {
+        return String(s || "").replace(/[&<>"']/g, (c) => ({
+          "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
+        }[c]));
+      }
+
+      // =========================================================
       // Fullscreen viewer
-      // ---------------------------
+      // =========================================================
       function openViewer(index) {
         currentIndex = index;
         const p = filtered[currentIndex];
@@ -380,17 +308,6 @@
         vImg.src = p.fullSrc;
         vTitle.textContent = p.title;
         vMeta.textContent = p.meta;
-        
-        // Update delete button with current photo ID
-        const deleteBtn = document.getElementById('viewerDeleteBtn');
-        if (deleteBtn) {
-          deleteBtn.onclick = async () => {
-            if (confirm(`Delete "${p.title}"?`)) {
-              await deletePhoto(p.id);
-              closeViewer();
-            }
-          };
-        }
       }
 
       function closeViewer() {
@@ -428,9 +345,9 @@
         if (dx > 40) prev();
       }, { passive: true });
 
-      // ---------------------------
+      // =========================================================
       // People (Face detect + cluster)
-      // ---------------------------
+      // =========================================================
       const MODEL_BASE = "https://cdn.jsdelivr.net/npm/@vladmandic/face-api@0.30.5/model/";
 
       function setProgress(pct, label) {
@@ -442,7 +359,6 @@
         if (modelsLoaded) return;
         setProgress(5, "Loading models…");
 
-        // TinyFaceDetector + Landmark + Recognition descriptor
         await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_BASE);
         await faceapi.nets.faceLandmark68TinyNet.loadFromUri(MODEL_BASE);
         await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_BASE);
@@ -469,7 +385,6 @@
         return out;
       }
 
-      // Crop a face thumbnail from image given box
       function cropFaceThumb(img, box, size = 96) {
         const canvas = document.createElement("canvas");
         canvas.width = size;
@@ -489,15 +404,9 @@
       async function loadImage(url) {
         return new Promise((resolve, reject) => {
           const img = new Image();
-          // Only set crossOrigin for external URLs
-          if (url.startsWith('http') && !url.includes(window.location.hostname)) {
-            img.crossOrigin = "anonymous";
-          }
+          img.crossOrigin = "anonymous";
           img.onload = () => resolve(img);
-          img.onerror = (err) => {
-            console.error('Failed to load image:', url, err);
-            reject(err);
-          };
+          img.onerror = reject;
           img.src = url;
         });
       }
@@ -506,11 +415,10 @@
         peopleRow.innerHTML = "";
 
         if (!clusters.length) {
-          peopleRow.innerHTML = `<p class="text-xs text-zinc-400">No faces found in these images.</p>`;
+          peopleRow.innerHTML = `<p class="text-xs text-zinc-400">No faces found (or images too small/unclear).</p>`;
           return;
         }
 
-        // Sort by count desc
         const sorted = [...clusters].sort((a, b) => b.photoIds.size - a.photoIds.size);
 
         for (const c of sorted) {
@@ -535,11 +443,16 @@
 
       async function analyzeFaces() {
         if (analyzing) return;
+        if (!photos.length) {
+          peopleSub.textContent = "No photos loaded yet. Fix Drive loading first.";
+          return;
+        }
+
         analyzing = true;
         analyzeBtn.disabled = true;
         analyzeBtn.classList.add("opacity-60", "cursor-not-allowed");
 
-        peopleSub.textContent = "Analyzing… (this is CPU-heavy, because browsers aren’t magic).";
+        peopleSub.textContent = "Analyzing… this can take a bit depending on image count and your machine.";
         setProgress(0, "Starting…");
 
         try {
@@ -561,7 +474,6 @@
 
             const img = await loadImage(p.fullSrc);
 
-            // detect faces + descriptors
             const detections = await faceapi
               .detectAllFaces(img, options)
               .withFaceLandmarks(true)
@@ -573,7 +485,6 @@
             for (const det of detections) {
               const desc = det.descriptor;
 
-              // find best cluster
               let best = null;
               let bestDist = Infinity;
 
@@ -606,7 +517,6 @@
               }
             }
 
-            // record which clusters appear in this photo
             const key = String(p.id);
             const uniq = Array.from(new Set(assigned));
             photoFaces.set(key, uniq);
@@ -615,11 +525,12 @@
           faceIndex = { clusters, photoFaces };
 
           setProgress(100, "Done");
-          peopleSub.textContent = `Found ${clusters.length} people clusters. Click a person to filter.`;
+          peopleSub.textContent = `Found ${clusters.length} face clusters. Click a person to filter.`;
           renderPeopleClusters(clusters);
         } catch (err) {
           console.error(err);
-          peopleSub.textContent = "Face analysis failed. Try running via Live Server (CORS/local file issues).";
+          peopleSub.textContent =
+            "Face analysis failed. Most common causes: CORS issues or opening as file://. Use Live Server.";
           setProgress(0, "Error");
         } finally {
           analyzing = false;
@@ -628,22 +539,9 @@
         }
       }
 
-      // ---------------------------
-      // Event wiring
-      // ---------------------------
-      uploadBtn.addEventListener("click", () => {
-        fileInput.click();
-      });
-
-      fileInput.addEventListener("change", (e) => {
-        const files = Array.from(e.target.files);
-        if (files.length > 0) {
-          uploadPhotos(files);
-        }
-        // Reset input so same file can be uploaded again
-        e.target.value = '';
-      });
-
+      // =========================================================
+      // Events
+      // =========================================================
       if (searchInput) {
         searchInput.addEventListener("input", (e) => {
           query = e.target.value;
@@ -672,9 +570,9 @@
         thresholdVal.textContent = Number(threshold.value).toFixed(2);
       });
 
-      closeBtn.addEventListener("click", closeViewer);
+      // Viewer
+      document.getElementById("closeBtn").addEventListener("click", closeViewer);
       backdrop.addEventListener("click", closeViewer);
-
       nextBtn.addEventListener("click", next);
       prevBtn.addEventListener("click", prev);
       nextZone.addEventListener("click", next);
@@ -688,9 +586,43 @@
         }
       });
 
-      // Init
-      thresholdVal.textContent = Number(threshold.value).toFixed(2);
-      loadPhotos(); // Load photos from server on startup
+      // =========================================================
+      // Boot: Load Drive images, then render
+      // =========================================================
+      async function boot() {
+        thresholdVal.textContent = Number(threshold.value).toFixed(2);
+
+        if (!API_KEY || API_KEY.includes("PASTE_YOUR_API_KEY_HERE")) {
+          statusLine.textContent = "Paste your Google API key in the code (API_KEY).";
+          resultCount.textContent = "0 items";
+          return;
+        }
+
+        try {
+          statusLine.textContent = "Listing images from Drive…";
+          const files = await listDriveImages(FOLDER_ID);
+
+          photos = files.map((f, idx) => {
+            const when = (f.modifiedTime || f.createdTime || "").slice(0, 10);
+            return {
+              id: f.id,
+              title: f.name || `Image ${idx + 1}`,
+              meta: when ? when : "Drive image",
+              thumbSrc: driveView(f.id),
+              fullSrc: driveView(f.id),
+            };
+          });
+
+          statusLine.textContent = `Loaded ${photos.length} Drive images.`;
+          render();
+        } catch (e) {
+          console.error(e);
+          statusLine.textContent = "Drive load failed. Check: API key, Drive API enabled, folder shared publicly.";
+          resultCount.textContent = "0 items";
+        }
+      }
+
+      boot();
     </script>
   </body>
 </html>
