@@ -1,148 +1,166 @@
-# 📸 Mobile Photo Gallery
+# 📸 Local Photo Gallery
 
-A modern, mobile-first photo gallery inspired by Google Photos with a sleek dark theme and intuitive interface.
+A modern, mobile-first photo gallery that stores your images locally in your browser. No backend, no server, just pure client-side storage.
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue)
+![Version](https://img.shields.io/badge/version-2.0.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 ## ✨ Features
 
 ### 🎯 Core Features
-- **Full-Screen Image Viewer** - Tap any photo to view in full screen with smooth animations
-- **Mobile-First Design** - Optimized for mobile devices with touch-friendly interactions
-- **Responsive Grid Layout** - Adaptive grid that adjusts from 2 to 8 columns based on screen size
-- **Date-Based Organization** - Photos organized by Today, Yesterday, and Last Week sections
-- **Dark Mode Ready** - Beautiful dark theme with proper contrast ratios
+- **💾 Local Storage** - All photos stored in browser localStorage (no server needed)
+- **📤 Multiple Upload** - Upload multiple photos at once
+- **🔍 Smart Search** - Search by title, place, date, or tags
+- **🏷️ Category Filters** - Filter by People, Places, or Things
+- **✅ Batch Operations** - Select and delete multiple photos
+- **🔎 Lightbox Viewer** - Full-screen viewer with zoom, pan, and navigation
+- **📱 Mobile-First** - Optimized for touch devices with intuitive controls
 
 ### 📱 Mobile Features
-- **Bottom Navigation Bar** - Easy-to-reach navigation at the bottom of the screen
-- **Touch Gestures** - Smooth swipe and tap interactions
-- **Full-Screen Image Modal** - Immersive image viewing experience
-- **Close with Tap** - Tap anywhere or use the close button to exit full-screen
-- **Mobile-Optimized Grid** - 2-column layout for comfortable mobile viewing
+- **Bottom Navigation Bar** - Easy-to-reach controls at the bottom
+- **Touch-Optimized** - Large tap targets and smooth interactions
+- **Prominent Upload Button** - Clear call-to-action for adding photos
+- **Responsive Grid** - Adapts from 2 to 5 columns based on screen size
 
 ### 🎨 UI/UX Features
-- **Smooth Animations** - Transitions and hover effects for modern feel
-- **Sticky Headers** - Section headers stay visible while scrolling
-- **Backdrop Blur Effects** - Modern glassmorphism effects
-- **Interactive Overlays** - Favorite and more options on photo hover/tap
-- **Search Bar** - Quick photo search functionality
-- **Storage Widget** - Visual storage meter (desktop only)
+- **Dark Theme** - Modern dark interface with proper contrast
+- **Smooth Animations** - Polished transitions throughout
+- **Empty State** - Helpful message when no photos exist
+- **Keyboard Shortcuts** - Navigate gallery with arrow keys, zoom with +/-
+- **Double-Click Zoom** - Quick zoom toggle in lightbox
 
 ## 🚀 Quick Start
 
 ### Installation
 
-1. Clone or download this repository
-2. Open `index.html` in your browser
-3. That's it! No build process or dependencies required.
+1. Download `index.html`
+2. Open it in any modern web browser
+3. That's it! No installation or build process required.
 
 ### Usage
 
-#### On Mobile:
-1. **View Photos** - Scroll through your timeline-organized gallery
-2. **Full-Screen View** - Tap any photo to view it full screen
-3. **Navigate** - Use the bottom navigation bar to switch between Photos, Search, Albums, and Library
-4. **Close Image** - Tap anywhere on the full-screen image or use the × button to close
+#### Upload Photos:
+1. Click/tap the **Upload** button (blue button on mobile, top-right on desktop)
+2. Select one or multiple photos from your device
+3. Photos will be converted to base64 and stored in localStorage
 
-#### On Desktop:
-1. Use the sidebar navigation for quick access to different sections
-2. Hover over photos to see favorite and more options
-3. Grid automatically expands to show more photos on larger screens
+#### Browse Photos:
+1. Scroll through your gallery
+2. Use the search bar to find specific photos
+3. Filter by category chips: All, People, Places, Things
+4. Sort by newest or oldest first
+
+#### View Full-Screen:
+1. Tap/click any photo to open lightbox
+2. Use arrow keys (← →) or buttons to navigate
+3. Zoom with mouse wheel, + / - keys, or zoom buttons
+4. Drag to pan when zoomed in
+5. Press Escape or tap Close to exit
+
+#### Manage Photos:
+1. Click **Select** button to enter selection mode
+2. Tap photos to select them
+3. Use **Select all** or **Clear** buttons
+4. Click **Delete** to remove selected photos (with confirmation)
 
 ## 📱 Responsive Breakpoints
 
 | Screen Size | Grid Columns | Navigation |
 |-------------|--------------|------------|
 | Mobile (< 640px) | 2 columns | Bottom Nav |
-| Tablet (640px - 1024px) | 3-4 columns | Bottom Nav |
-| Desktop (> 1024px) | 5-6 columns | Sidebar + Top Bar |
-| Large Desktop (> 1280px) | 6-8 columns | Sidebar + Top Bar |
+| Small (640px) | 3 columns | Bottom Nav |
+| Medium (768px) | 4 columns | Top Bar |
+| Large (1024px+) | 5 columns | Top Bar |
 
 ## 🛠️ Tech Stack
 
 - **HTML5** - Semantic markup
-- **Tailwind CSS v3** - Utility-first CSS framework (CDN)
-- **Vanilla JavaScript** - No framework dependencies
-- **Unsplash API** - High-quality placeholder images
+- **Tailwind CSS v3** - Utility-first CSS (CDN)
+- **Vanilla JavaScript** - Pure JS, no frameworks
+- **localStorage API** - Client-side persistent storage
+- **FileReader API** - Convert images to base64
 
 ## 📂 Project Structure
 
 ```
 gallery/
-├── index.html          # Main HTML file with embedded styles and scripts
-└── README.md          # Project documentation
+├── index.html          # Complete single-file application
+└── README.md          # This file
 ```
+
+## 💡 How It Works
+
+### Storage
+- Photos are converted to **base64 data URLs**
+- Stored in browser's **localStorage** under key `gallery_photos`
+- Each photo includes: id, title, place, date, time, tags, and base64 src
+
+### Persistence
+- Photos persist across browser sessions
+- Survives page refreshes and browser restarts
+- **Lost when clearing browser data or cache**
+
+### Limitations
+- localStorage typically limited to **5-10MB** per domain
+- Recommended max **50-100 photos** for best performance
+- No cloud backup or sync
+- No sharing between devices
+
+## ⚠️ Important Notes
+
+- **Photos are stored ONLY in your browser**
+- Clearing browser data/cache will **delete all photos**
+- Private browsing won't save photos after closing
+- Not suitable for large photo libraries (use cloud services for that)
+- Each browser has independent storage (Chrome ≠ Firefox)
 
 ## 🎨 Customization
 
-### Change Colors
+### Change Theme Colors
+Search for these in `index.html` and replace:
+- `bg-zinc-950` - Main background
+- `text-zinc-100` - Primary text
+- `sky-500` - Accent color (blue)
+- `border-white/10` - Border opacity
 
-The project uses Tailwind's color system. To customize:
-- **Primary Color**: Change `blue-600` classes to your preferred color
-- **Dark Background**: Modify `zinc-950` classes
-- **Accent Color**: Update gradient colors in `from-blue-500 to-purple-600`
-
-### Add Your Own Images
-
-Replace Unsplash URLs in the `<img>` tags:
-```html
-<img src="your-image-url.jpg" alt="Description" />
+### Modify Default Tags
+In the upload function, change:
+```javascript
+tags: ["things"],  // Change to your preferred default tag
 ```
 
-### Modify Grid Layout
-
-Adjust grid columns in the main sections:
-```html
-<!-- Current: 2 cols mobile, 6 cols desktop -->
-<div class="grid grid-cols-2 ... xl:grid-cols-6">
-
-<!-- Custom: 3 cols mobile, 8 cols desktop -->
-<div class="grid grid-cols-3 ... xl:grid-cols-8">
+### Adjust Storage Key
+Change the storage key:
+```javascript
+const STORAGE_KEY = "gallery_photos";  // Rename this
 ```
-
-## 🌟 Key Features Explained
-
-### Full-Screen Image Viewer
-When you tap/click on any photo, a full-screen modal opens with:
-- Black background overlay
-- Centered, scaled image that fits the screen
-- Close button (×) in the top-right
-- Tap anywhere to close
-- Smooth fade-in/fade-out animations
-
-### Mobile Bottom Navigation
-Fixed navigation bar at the bottom includes:
-- **Photos** - Main gallery view (active)
-- **Search** - Search your photos
-- **Albums** - Organized collections
-- **Library** - Your photo library
-
-### Responsive Design
-The gallery automatically adapts:
-- **Mobile**: 2-column grid, bottom navigation
-- **Tablet**: 3-4 column grid
-- **Desktop**: 5-6 column grid, sidebar navigation
-- **Large Desktop**: Up to 8 columns for maximum screen usage
-
-## 📸 Image Sources
-
-All images are sourced from [Unsplash](https://unsplash.com), a free high-quality photo library. The URLs include automatic cropping and resizing parameters for optimal performance.
 
 ## 🔧 Browser Support
 
-- ✅ Chrome/Edge (recommended)
-- ✅ Firefox
-- ✅ Safari
-- ✅ Mobile browsers (iOS Safari, Chrome Mobile)
+- ✅ Chrome/Edge 88+
+- ✅ Firefox 78+
+- ✅ Safari 14+
+- ✅ Mobile browsers (iOS Safari 14+, Chrome Mobile 88+)
 
-## 📝 License
+Requires support for:
+- localStorage API
+- FileReader API  
+- ES6 JavaScript (arrow functions, async/await)
 
-This project is open source and available under the [MIT License](LICENSE).
+## 📝 Keyboard Shortcuts
+
+### Lightbox Mode:
+- `←` / `→` - Previous/Next photo
+- `+` / `=` - Zoom in
+- `-` - Zoom out
+- `Esc` - Close lightbox
+
+### Global:
+- `/` - Focus search bar
 
 ## 🤝 Contributing
 
-Feel free to fork this project and customize it for your needs!
+Feel free to fork and customize for your needs! Suggestions welcome.
 
 ## 📞 Support
 
@@ -150,6 +168,6 @@ For issues or questions, please open an issue on the repository.
 
 ---
 
-**Made with ❤️ for mobile photography enthusiasts**
+**Made with ❤️ - A simple, clean, functional photo gallery**
 
-*Last updated: February 11, 2026*
+*Last updated February 11, 2026*
