@@ -3,665 +3,564 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Functional Gallery (Vanilla + Tailwind)</title>
+    <title>Sleek Gallery + People (Face Match)</title>
     <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- FaceAPI (bundled) -->
+    <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api@0.30.5/dist/face-api.js"></script>
   </head>
 
   <body class="bg-zinc-950 text-zinc-100">
-    <!-- Top Bar -->
-    <header class="sticky top-0 z-50 border-b border-white/10 bg-zinc-950/70 backdrop-blur">
+    <!-- Top bar -->
+    <header class="sticky top-0 z-40 border-b border-white/10 bg-zinc-950/70 backdrop-blur">
       <div class="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3">
         <div class="flex items-center gap-2">
           <div class="h-9 w-9 rounded-xl bg-gradient-to-br from-sky-500 to-indigo-500"></div>
           <div class="leading-tight">
             <p class="text-sm font-semibold">Gallery</p>
-            <p class="text-xs text-zinc-400">Your photos • Stored locally</p>
+            <p class="text-xs text-zinc-400">Dummy photos • Fullscreen slider • People</p>
           </div>
         </div>
 
-        <div class="ml-auto hidden items-center gap-2 md:flex">
-          <input id="fileInput" type="file" accept="image/*" multiple class="hidden" />
-          <button
-            id="uploadBtn"
-            class="flex items-center gap-2 rounded-xl border border-sky-500/30 bg-sky-500/10 px-3 py-2 text-sm text-sky-300 hover:bg-sky-500/20"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-            </svg>
-            Upload
-          </button>
-          <button
-            id="selectToggle"
-            class="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm hover:bg-white/10"
-          >
-            Select
-          </button>
-
-          <select
-            id="sortSelect"
-            class="rounded-xl border border-white/10 bg-zinc-950/60 px-3 py-2 text-sm text-zinc-200 outline-none"
-          >
-            <option value="newest">Newest</option>
-            <option value="oldest">Oldest</option>
-          </select>
-
-          <div class="h-9 w-9 rounded-full bg-white/10"></div>
-        </div>
-      </div>
-
-      <!-- Search row -->
-      <div class="mx-auto max-w-6xl px-4 pb-3">
-        <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
-          <div class="flex flex-1 items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 py-2">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-zinc-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <div class="ml-auto flex items-center gap-2">
+          <div class="hidden sm:flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 py-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-zinc-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21 21l-4.3-4.3" />
               <circle cx="11" cy="11" r="7" />
             </svg>
-            <input
-              id="searchInput"
-              class="w-full bg-transparent text-sm outline-none placeholder:text-zinc-500"
-              placeholder="Search title, tags, place, date..."
-            />
-            <button
-              id="clearSearch"
-              class="rounded-xl border border-white/10 bg-white/5 px-2 py-1 text-xs text-zinc-300 hover:bg-white/10"
-              title="Clear"
-            >
-              Clear
-            </button>
+            <input id="searchInput" class="w-64 bg-transparent text-sm outline-none placeholder:text-zinc-500" placeholder="Search..." />
           </div>
 
-          <div class="flex items-center gap-2">
-            <button id="chipAll" class="chip chip-on">All</button>
-            <button id="chipPeople" class="chip">People</button>
-            <button id="chipPlaces" class="chip">Places</button>
-            <button id="chipThings" class="chip">Things</button>
-          </div>
+          <button id="peopleToggle" class="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm hover:bg-white/10">
+            People
+          </button>
+
+          <button id="clearSearch" class="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm hover:bg-white/10">
+            Clear
+          </button>
         </div>
       </div>
     </header>
 
-    <!-- Selection bar -->
-    <div id="selectionBar" class="sticky top-[112px] z-40 hidden border-b border-white/10 bg-zinc-950/70 backdrop-blur">
-      <div class="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
-        <p class="text-sm">
-          <span id="selectedCount" class="font-semibold">0</span> selected
-        </p>
-        <div class="flex items-center gap-2">
-          <button id="selectAllBtn" class="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm hover:bg-white/10">Select all</button>
-          <button id="clearSelectionBtn" class="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm hover:bg-white/10">Clear</button>
+    <!-- People Drawer -->
+    <section id="peopleDrawer" class="hidden border-b border-white/10 bg-zinc-950/60 backdrop-blur">
+      <div class="mx-auto max-w-6xl px-4 py-4">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p class="text-sm font-semibold">People</p>
+            <p id="peopleSub" class="text-xs text-zinc-400">
+              Detect faces → cluster similar faces → click a person to filter.
+            </p>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <label class="hidden sm:flex items-center gap-2 text-xs text-zinc-300">
+              Match threshold
+              <input id="threshold" type="range" min="0.35" max="0.70" step="0.01" value="0.52" />
+              <span id="thresholdVal" class="w-10 text-right">0.52</span>
+            </label>
+
+            <button id="analyzeBtn" class="rounded-xl border border-sky-500/30 bg-sky-500/10 px-3 py-2 text-sm text-sky-200 hover:bg-sky-500/20">
+              Analyze faces
+            </button>
+
+            <button id="clearPeopleFilter" class="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm hover:bg-white/10">
+              Show all
+            </button>
+          </div>
         </div>
+
+        <div class="mt-3 flex items-center gap-3">
+          <div class="h-2 w-full overflow-hidden rounded-full bg-white/10">
+            <div id="progressBar" class="h-2 w-0 rounded-full bg-gradient-to-r from-sky-500 to-indigo-500"></div>
+          </div>
+          <p id="progressText" class="w-28 text-right text-xs text-zinc-400">Idle</p>
+        </div>
+
+        <div id="peopleRow" class="mt-4 flex gap-3 overflow-x-auto pb-2"></div>
       </div>
-    </div>
+    </section>
 
     <!-- Main -->
-    <main class="mx-auto max-w-6xl px-4 py-6 pb-24 md:pb-6">
+    <main class="mx-auto max-w-6xl px-4 py-6">
       <div class="mb-4 flex items-center justify-between">
-        <h2 class="text-sm font-semibold text-zinc-200">Your photos</h2>
         <p id="resultCount" class="text-xs text-zinc-400"></p>
+        <p class="text-xs text-zinc-500">Click → fullscreen. Swipe/keys → next/prev.</p>
       </div>
 
       <div id="grid" class="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5"></div>
 
       <footer class="py-10 text-center text-xs text-zinc-500">
-        Photos stored in your browser. Clear browser data = photos deleted.
+        Yes, this does face matching in-browser. No, it’s not free performance-wise.
       </footer>
     </main>
 
-    <!-- Lightbox -->
-    <div id="lightbox" class="fixed inset-0 z-[999] hidden">
-      <div class="absolute inset-0 bg-black/70"></div>
+    <!-- Fullscreen Viewer -->
+    <div id="viewer" class="fixed inset-0 z-[999] hidden">
+      <div id="backdrop" class="absolute inset-0 bg-black/90"></div>
 
-      <div class="absolute inset-0 flex flex-col">
-        <!-- Lightbox top bar -->
-        <div class="flex items-center justify-between gap-2 border-b border-white/10 bg-zinc-950/60 px-4 py-3 backdrop-blur">
-          <div class="min-w-0">
-            <p id="lbTitle" class="truncate text-sm font-semibold"></p>
-            <p id="lbMeta" class="truncate text-xs text-zinc-400"></p>
-          </div>
-
-          <div class="flex items-center gap-2">
-            <button id="zoomOutBtn" class="lbbtn" title="Zoom out">−</button>
-            <button id="zoomInBtn" class="lbbtn" title="Zoom in">+</button>
-            <button id="resetZoomBtn" class="lbbtn" title="Reset">Reset</button>
-            <button id="prevBtn" class="lbbtn" title="Previous (←)">←</button>
-            <button id="nextBtn" class="lbbtn" title="Next (→)">→</button>
-            <button id="closeBtn" class="lbbtn" title="Close (Esc)">✕</button>
-          </div>
+      <div class="absolute left-0 right-0 top-0 z-10 flex items-center justify-between px-4 py-3">
+        <div class="min-w-0">
+          <p id="vTitle" class="truncate text-sm font-semibold text-zinc-100"></p>
+          <p id="vMeta" class="truncate text-xs text-zinc-400"></p>
         </div>
 
-        <!-- Image stage -->
-        <div class="relative flex-1 overflow-hidden">
-          <div id="stage" class="absolute inset-0 cursor-grab">
-            <img id="lbImg" class="pointer-events-none select-none max-w-none" alt="preview" />
-          </div>
+        <button
+          id="closeBtn"
+          class="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-sm text-zinc-200 hover:bg-white/10"
+          title="Close (Esc)"
+        >
+          ✕
+        </button>
+      </div>
 
-          <!-- Bottom hint -->
-          <div class="pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full border border-white/10 bg-zinc-950/60 px-3 py-2 text-xs text-zinc-300 backdrop-blur">
-            Wheel = zoom • Drag = pan • Double-click = zoom • Esc = close
-          </div>
+      <div class="absolute inset-0 flex items-center justify-center">
+        <button id="prevZone" class="absolute left-0 top-0 h-full w-1/3 cursor-w-resize" aria-label="Previous"></button>
+        <button id="nextZone" class="absolute right-0 top-0 h-full w-1/3 cursor-e-resize" aria-label="Next"></button>
+
+        <img
+          id="vImg"
+          class="max-h-[92vh] max-w-[92vw] select-none rounded-2xl object-contain shadow-2xl shadow-black/60"
+          alt="Fullscreen"
+          draggable="false"
+        />
+
+        <button
+          id="prevBtn"
+          class="absolute left-4 hidden rounded-full border border-white/10 bg-white/5 px-3 py-3 text-zinc-200 hover:bg-white/10 md:flex"
+          title="Previous (←)"
+        >
+          ←
+        </button>
+        <button
+          id="nextBtn"
+          class="absolute right-4 hidden rounded-full border border-white/10 bg-white/5 px-3 py-3 text-zinc-200 hover:bg-white/10 md:flex"
+          title="Next (→)"
+        >
+          →
+        </button>
+
+        <div class="pointer-events-none absolute bottom-5 left-1/2 -translate-x-1/2 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs text-zinc-300 backdrop-blur">
+          Swipe • ←/→ • Tap sides • Esc
         </div>
       </div>
     </div>
 
-    <!-- Mobile bottom bar -->
-    <nav class="fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-zinc-950/90 backdrop-blur md:hidden">
-      <div class="mx-auto flex max-w-6xl items-center justify-around px-2 py-3">
-        <button id="mobileSelect" class="flex flex-col items-center gap-1 px-3 py-2 text-zinc-400">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-          </svg>
-          <span class="text-[10px]">Select</span>
-        </button>
-        <button id="mobileUpload" class="flex flex-col items-center gap-1 rounded-xl bg-sky-500 px-4 py-2 text-white">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-          </svg>
-          <span class="text-[10px] font-medium">Upload</span>
-        </button>
-        <button id="mobileSort" class="flex flex-col items-center gap-1 px-3 py-2 text-zinc-400">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-          </svg>
-          <span class="text-[10px]">Sort</span>
-        </button>
-        <button id="mobileClear" class="flex flex-col items-center gap-1 px-3 py-2 text-zinc-400">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-          <span class="text-[10px]">Clear</span>
-        </button>
-      </div>
-    </nav>
-
-    <style>
-      .chip {
-        border: 1px solid rgba(255,255,255,.1);
-        background: rgba(255,255,255,.04);
-        padding: .45rem .7rem;
-        border-radius: 999px;
-        font-size: .75rem;
-        color: rgba(244,244,245,.9);
-      }
-      .chip:hover { background: rgba(255,255,255,.08); }
-      .chip-on {
-        background: rgba(56,189,248,.18);
-        border-color: rgba(56,189,248,.35);
-        color: rgba(224,242,254,.95);
-      }
-      .lbbtn {
-        border: 1px solid rgba(255,255,255,.1);
-        background: rgba(255,255,255,.06);
-        padding: .45rem .7rem;
-        border-radius: .75rem;
-        font-size: .85rem;
-      }
-      .lbbtn:hover { background: rgba(255,255,255,.12); }
-    </style>
-
     <script>
-      // --- Storage Functions (Browser LocalStorage) ---
-      const STORAGE_KEY = "gallery_photos";
+      // ---------------------------
+      // Dummy photos (real images)
+      // ---------------------------
+      const base = (id, w, h) => `https://picsum.photos/id/${id}/${w}/${h}`;
+      const thumb = (id) => base(id, 700, 700);
+      const full = (id) => base(id, 1800, 1200);
 
-      function savePhotos() {
-        try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(photos));
-        } catch (e) {
-          console.error("Failed to save photos:", e);
-          alert("Storage limit reached. Please delete some photos.");
-        }
-      }
+      // Use ids that often include people. Not perfect, but better odds.
+      const photos = [
+        { id: 64,  title: "Street",   meta: "Feb 11, 2026 • Kolkata" },
+        { id: 91,  title: "Portrait", meta: "Feb 10, 2026 • Studio" },
+        { id: 219, title: "Friends",  meta: "Feb 09, 2026 • Hangout" },
+        { id: 342, title: "Crowd",    meta: "Feb 08, 2026 • City" },
+        { id: 823, title: "Walk",     meta: "Feb 07, 2026 • Outdoors" },
+        { id: 1027, title: "Cafe",    meta: "Feb 06, 2026 • Cafe" },
+        { id: 1005, title: "Road",    meta: "Feb 05, 2026 • Highway" },
+        { id: 1025, title: "Light",   meta: "Feb 04, 2026 • Night" },
+        { id: 1009, title: "Moment",  meta: "Feb 03, 2026 • Day" },
+        { id: 1011, title: "Calm",    meta: "Feb 02, 2026 • Home" },
+        { id: 1012, title: "Motion",  meta: "Feb 01, 2026 • Outdoors" },
+        { id: 1013, title: "Frame",   meta: "Jan 31, 2026 • Studio" },
+      ].map(p => ({
+        ...p,
+        thumbSrc: thumb(p.id),
+        fullSrc: full(p.id),
+      }));
 
-      function loadPhotos() {
-        try {
-          const data = localStorage.getItem(STORAGE_KEY);
-          return data ? JSON.parse(data) : [];
-        } catch (e) {
-          console.error("Failed to load photos:", e);
-          return [];
-        }
-      }
-
-      // Start with photos from storage (empty on first visit)
-      const photos = loadPhotos();
-
-      // --- State ---
+      // ---------------------------
+      // UI state
+      // ---------------------------
       let query = "";
-      let chip = "all"; // all | people | places | things
-      let sort = "newest";
-      let selectMode = false;
-      const selected = new Set();
-
-      // Lightbox state
-      let filtered = [];
+      let peopleFilter = null; // clusterId or null
+      let filtered = [...photos];
       let currentIndex = -1;
 
-      // Zoom/pan state
-      let scale = 1;
-      let minScale = 1;
-      let maxScale = 6;
-      let tx = 0, ty = 0;
-      let dragging = false;
-      let dragStart = { x: 0, y: 0, tx: 0, ty: 0 };
+      // People analysis cache
+      let modelsLoaded = false;
+      let analyzing = false;
+      let faceIndex = null; // { clusters: [...], photoFaces: Map(photoKey -> [clusterId...]) }
 
-      // --- Elements ---
+      // ---------------------------
+      // Elements
+      // ---------------------------
       const grid = document.getElementById("grid");
+      const resultCount = document.getElementById("resultCount");
       const searchInput = document.getElementById("searchInput");
       const clearSearch = document.getElementById("clearSearch");
-      const resultCount = document.getElementById("resultCount");
 
-      const chipAll = document.getElementById("chipAll");
-      const chipPeople = document.getElementById("chipPeople");
-      const chipPlaces = document.getElementById("chipPlaces");
-      const chipThings = document.getElementById("chipThings");
-
-      const sortSelect = document.getElementById("sortSelect");
-      const selectToggle = document.getElementById("selectToggle");
-      const selectionBar = document.getElementById("selectionBar");
-      const selectedCount = document.getElementById("selectedCount");
-      const selectAllBtn = document.getElementById("selectAllBtn");
-      const clearSelectionBtn = document.getElementById("clearSelectionBtn");
-
-      const uploadBtn = document.getElementById("uploadBtn");
-      const fileInput = document.getElementById("fileInput");
-
-      // Lightbox
-      const lightbox = document.getElementById("lightbox");
-      const lbImg = document.getElementById("lbImg");
-      const lbTitle = document.getElementById("lbTitle");
-      const lbMeta = document.getElementById("lbMeta");
+      const viewer = document.getElementById("viewer");
+      const backdrop = document.getElementById("backdrop");
+      const vImg = document.getElementById("vImg");
+      const vTitle = document.getElementById("vTitle");
+      const vMeta = document.getElementById("vMeta");
       const closeBtn = document.getElementById("closeBtn");
       const prevBtn = document.getElementById("prevBtn");
       const nextBtn = document.getElementById("nextBtn");
-      const zoomInBtn = document.getElementById("zoomInBtn");
-      const zoomOutBtn = document.getElementById("zoomOutBtn");
-      const resetZoomBtn = document.getElementById("resetZoomBtn");
-      const stage = document.getElementById("stage");
+      const prevZone = document.getElementById("prevZone");
+      const nextZone = document.getElementById("nextZone");
 
-      // Mobile buttons
-      const mobileSelect = document.getElementById("mobileSelect");
-      const mobileUpload = document.getElementById("mobileUpload");
-      const mobileSort = document.getElementById("mobileSort");
-      const mobileClear = document.getElementById("mobileClear");
+      const peopleToggle = document.getElementById("peopleToggle");
+      const peopleDrawer = document.getElementById("peopleDrawer");
+      const analyzeBtn = document.getElementById("analyzeBtn");
+      const peopleRow = document.getElementById("peopleRow");
+      const peopleSub = document.getElementById("peopleSub");
+      const progressBar = document.getElementById("progressBar");
+      const progressText = document.getElementById("progressText");
+      const clearPeopleFilter = document.getElementById("clearPeopleFilter");
 
-      // --- Helpers ---
-      function setChip(next) {
-        chip = next;
-        [chipAll, chipPeople, chipPlaces, chipThings].forEach((el) => el.classList.remove("chip-on"));
-        if (chip === "all") chipAll.classList.add("chip-on");
-        if (chip === "people") chipPeople.classList.add("chip-on");
-        if (chip === "places") chipPlaces.classList.add("chip-on");
-        if (chip === "things") chipThings.classList.add("chip-on");
-        render();
-      }
+      const threshold = document.getElementById("threshold");
+      const thresholdVal = document.getElementById("thresholdVal");
 
-      function setSelectMode(on) {
-        selectMode = on;
-        selectionBar.classList.toggle("hidden", !selectMode);
-        selectToggle.textContent = selectMode ? "Done" : "Select";
-        
-        // Update mobile select button styling
-        if (selectMode) {
-          mobileSelect.classList.remove("text-zinc-400");
-          mobileSelect.classList.add("text-sky-400");
-        } else {
-          mobileSelect.classList.remove("text-sky-400");
-          mobileSelect.classList.add("text-zinc-400");
-        }
-        
-        updateSelectionUI();
-        render();
-      }
-
-      function updateSelectionUI() {
-        selectedCount.textContent = selected.size;
-      }
-
-      function formatDate(d) {
-        // yyyy-mm-dd -> "Feb 11, 2026"
-        const dt = new Date(d + "T00:00:00");
-        return dt.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "2-digit" });
-      }
-
-      function matches(photo) {
+      // ---------------------------
+      // Gallery filtering
+      // ---------------------------
+      function matchesText(p) {
+        if (!query.trim()) return true;
         const q = query.trim().toLowerCase();
-        const hay = `${photo.title} ${photo.place} ${photo.date} ${photo.time} ${photo.tags.join(" ")}`.toLowerCase();
-        const qOk = q === "" || hay.includes(q);
-        const chipOk = chip === "all" || photo.tags.includes(chip);
-        return qOk && chipOk;
+        return (`${p.title} ${p.meta}`).toLowerCase().includes(q);
       }
 
-      function sortPhotos(list) {
-        const copy = [...list];
-        copy.sort((a, b) => {
-          const ad = a.date + " " + a.time;
-          const bd = b.date + " " + b.time;
-          return sort === "newest" ? (bd.localeCompare(ad)) : (ad.localeCompare(bd));
-        });
-        return copy;
+      function matchesPeople(p) {
+        if (!peopleFilter) return true;
+        if (!faceIndex) return false;
+        const key = String(p.id);
+        const ids = faceIndex.photoFaces.get(key) || [];
+        return ids.includes(peopleFilter);
       }
 
-      function getFiltered() {
-        return sortPhotos(photos.filter(matches));
-      }
-
-      function photoTile(photo, index) {
-        const isSelected = selected.has(photo.id);
-        return `
-          <button
-            class="group relative aspect-square overflow-hidden rounded-2xl border ${isSelected ? "border-sky-400/50" : "border-white/10"} bg-white/5 text-left"
-            data-index="${index}"
-            data-id="${photo.id}"
-            title="${photo.title}"
-          >
-            <img src="${photo.src}" alt="${photo.title}" class="h-full w-full object-cover opacity-90 transition group-hover:opacity-100" />
-            <div class="absolute inset-0 opacity-0 transition group-hover:opacity-100">
-              <div class="absolute inset-0 bg-black/35"></div>
-              <div class="absolute left-3 top-3 flex items-center gap-2">
-                <span class="rounded-full bg-white/10 px-2 py-1 text-[11px]">${photo.time}</span>
-                <span class="rounded-full bg-white/10 px-2 py-1 text-[11px]">${photo.tags[0] ?? "tag"}</span>
-              </div>
-
-              ${selectMode
-                ? `<div class="absolute right-3 top-3 h-9 w-9 rounded-full border border-white/10 bg-white/10 flex items-center justify-center">
-                    <span class="text-sm">${isSelected ? "✓" : ""}</span>
-                   </div>`
-                : `<div class="absolute right-3 top-3 h-9 w-9 rounded-full border border-white/10 bg-white/10 flex items-center justify-center">
-                    <span class="text-sm">↗</span>
-                   </div>`
-              }
-
-              <div class="absolute bottom-3 left-3 text-xs text-zinc-100">
-                <p class="font-medium">${photo.title}</p>
-                <p class="text-zinc-300">${photo.place} • ${formatDate(photo.date)}</p>
-              </div>
-            </div>
-
-            ${selectMode
-              ? `<div class="absolute inset-0 ${isSelected ? "bg-sky-500/10" : "bg-transparent"}"></div>`
-              : ""
-            }
-          </button>
-        `;
-      }
-
-      // --- Render ---
       function render() {
-        filtered = getFiltered();
+        filtered = photos.filter(p => matchesText(p) && matchesPeople(p));
         resultCount.textContent = `${filtered.length} items`;
 
-        if (filtered.length === 0) {
-          grid.innerHTML = `
-            <div class="col-span-full flex flex-col items-center justify-center py-20 text-center">
-              <div class="mb-4 h-20 w-20 rounded-full bg-white/5 flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-zinc-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
+        grid.innerHTML = filtered.map((p, i) => `
+          <button
+            class="group relative aspect-square overflow-hidden rounded-2xl border border-white/10 bg-white/5"
+            data-index="${i}"
+            title="${p.title}"
+          >
+            <img
+              src="${p.thumbSrc}"
+              alt="${p.title}"
+              class="h-full w-full object-cover opacity-90 transition group-hover:opacity-100"
+              loading="lazy"
+              crossorigin="anonymous"
+            />
+            <div class="absolute inset-0 opacity-0 transition group-hover:opacity-100">
+              <div class="absolute inset-0 bg-black/25"></div>
+              <div class="absolute bottom-3 left-3 text-xs text-zinc-100">
+                <p class="font-medium">${p.title}</p>
+                <p class="text-zinc-300">${p.meta}</p>
               </div>
-              <p class="text-lg font-medium text-zinc-300 mb-2">No photos yet</p>
-              <p class="text-sm text-zinc-500 mb-6">Upload your first photo to get started</p>
-              <button onclick="document.getElementById('fileInput').click()" class="rounded-xl bg-sky-500 px-6 py-3 text-sm font-medium text-white hover:bg-sky-600">
-                Upload Photos
-              </button>
             </div>
-          `;
-          return;
-        }
+          </button>
+        `).join("");
 
-        grid.innerHTML = filtered.map((p, i) => photoTile(p, i)).join("");
-
-        // click handling
-        grid.querySelectorAll("button[data-index]").forEach((btn) => {
-          btn.addEventListener("click", () => {
-            const idx = Number(btn.dataset.index);
-            const id = btn.dataset.id;
-
-            if (selectMode) {
-              if (selected.has(id)) selected.delete(id);
-              else selected.add(id);
-              updateSelectionUI();
-              render();
-              return;
-            }
-
-            openLightbox(idx);
-          });
+        grid.querySelectorAll("button[data-index]").forEach(btn => {
+          btn.addEventListener("click", () => openViewer(Number(btn.dataset.index)));
         });
       }
 
-      // --- Lightbox open/close ---
-      function openLightbox(index) {
+      // ---------------------------
+      // Fullscreen viewer
+      // ---------------------------
+      function openViewer(index) {
         currentIndex = index;
-        const photo = filtered[currentIndex];
-        if (!photo) return;
+        const p = filtered[currentIndex];
+        if (!p) return;
 
-        lbImg.src = photo.src;
-        lbTitle.textContent = photo.title;
-        lbMeta.textContent = `${photo.place} • ${formatDate(photo.date)} • ${photo.time} • ${photo.tags.join(", ")}`;
-
-        lightbox.classList.remove("hidden");
+        viewer.classList.remove("hidden");
         document.body.classList.add("overflow-hidden");
 
-        // reset zoom to fit
-        requestAnimationFrame(() => resetZoomToFit());
+        vImg.src = p.fullSrc;
+        vTitle.textContent = p.title;
+        vMeta.textContent = p.meta;
       }
 
-      function closeLightbox() {
-        lightbox.classList.add("hidden");
+      function closeViewer() {
+        viewer.classList.add("hidden");
         document.body.classList.remove("overflow-hidden");
         currentIndex = -1;
       }
 
-      function nextPhoto() {
-        if (filtered.length === 0) return;
+      function next() {
+        if (!filtered.length) return;
         currentIndex = (currentIndex + 1) % filtered.length;
-        openLightbox(currentIndex);
+        openViewer(currentIndex);
       }
 
-      function prevPhoto() {
-        if (filtered.length === 0) return;
+      function prev() {
+        if (!filtered.length) return;
         currentIndex = (currentIndex - 1 + filtered.length) % filtered.length;
-        openLightbox(currentIndex);
+        openViewer(currentIndex);
       }
 
-      // --- Zoom / Pan ---
-      function applyTransform() {
-        lbImg.style.transform = `translate(${tx}px, ${ty}px) scale(${scale})`;
-        lbImg.style.transformOrigin = "center center";
+      // Swipe
+      let touchStartX = 0, touchStartY = 0;
+      viewer.addEventListener("touchstart", (e) => {
+        const t = e.touches[0];
+        touchStartX = t.clientX;
+        touchStartY = t.clientY;
+      }, { passive: true });
+
+      viewer.addEventListener("touchend", (e) => {
+        const t = e.changedTouches[0];
+        const dx = t.clientX - touchStartX;
+        const dy = t.clientY - touchStartY;
+        if (Math.abs(dy) > Math.abs(dx)) return;
+        if (dx < -40) next();
+        if (dx > 40) prev();
+      }, { passive: true });
+
+      // ---------------------------
+      // People (Face detect + cluster)
+      // ---------------------------
+      const MODEL_BASE = "https://cdn.jsdelivr.net/npm/@vladmandic/face-api@0.30.5/model/";
+
+      function setProgress(pct, label) {
+        progressBar.style.width = `${Math.max(0, Math.min(100, pct))}%`;
+        progressText.textContent = label;
       }
 
-      function resetZoomToFit() {
-        // Keep it simple: start at 1, center, allow zoom up to max
-        scale = 1;
-        tx = 0;
-        ty = 0;
-        applyTransform();
+      async function loadModelsOnce() {
+        if (modelsLoaded) return;
+        setProgress(5, "Loading models…");
+
+        // TinyFaceDetector + Landmark + Recognition descriptor
+        await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_BASE);
+        await faceapi.nets.faceLandmark68TinyNet.loadFromUri(MODEL_BASE);
+        await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_BASE);
+
+        modelsLoaded = true;
+        setProgress(10, "Models loaded");
       }
 
-      function zoomBy(delta, cx = null, cy = null) {
-        const prev = scale;
-        const next = Math.min(maxScale, Math.max(minScale, scale + delta));
-        if (next === prev) return;
-
-        // Optional focal zoom: keep point under cursor stable-ish
-        if (cx !== null && cy !== null) {
-          // translate adjustment (rough but good enough for a dummy)
-          tx = tx - (cx - window.innerWidth / 2) * (next / prev - 1);
-          ty = ty - (cy - window.innerHeight / 2) * (next / prev - 1);
+      function euclideanDistance(a, b) {
+        let sum = 0;
+        for (let i = 0; i < a.length; i++) {
+          const d = a[i] - b[i];
+          sum += d * d;
         }
-
-        scale = next;
-        applyTransform();
+        return Math.sqrt(sum);
       }
 
-      // Pan drag
-      stage.addEventListener("mousedown", (e) => {
-        dragging = true;
-        stage.classList.remove("cursor-grab");
-        stage.classList.add("cursor-grabbing");
-        dragStart = { x: e.clientX, y: e.clientY, tx, ty };
-      });
+      function meanDescriptor(list) {
+        const n = list.length;
+        const dim = list[0].length;
+        const out = new Float32Array(dim);
+        for (const v of list) for (let i = 0; i < dim; i++) out[i] += v[i];
+        for (let i = 0; i < dim; i++) out[i] /= n;
+        return out;
+      }
 
-      window.addEventListener("mousemove", (e) => {
-        if (!dragging) return;
-        tx = dragStart.tx + (e.clientX - dragStart.x);
-        ty = dragStart.ty + (e.clientY - dragStart.y);
-        applyTransform();
-      });
+      // Crop a face thumbnail from image given box
+      function cropFaceThumb(img, box, size = 96) {
+        const canvas = document.createElement("canvas");
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext("2d");
 
-      window.addEventListener("mouseup", () => {
-        dragging = false;
-        stage.classList.add("cursor-grab");
-        stage.classList.remove("cursor-grabbing");
-      });
+        const pad = 0.25;
+        const x = Math.max(0, box.x - box.width * pad);
+        const y = Math.max(0, box.y - box.height * pad);
+        const w = Math.min(img.width - x, box.width * (1 + pad * 2));
+        const h = Math.min(img.height - y, box.height * (1 + pad * 2));
 
-      // Wheel zoom
-      stage.addEventListener("wheel", (e) => {
-        e.preventDefault();
-        const delta = e.deltaY > 0 ? -0.15 : 0.15;
-        zoomBy(delta, e.clientX, e.clientY);
-      }, { passive: false });
+        ctx.drawImage(img, x, y, w, h, 0, 0, size, size);
+        return canvas.toDataURL("image/jpeg", 0.85);
+      }
 
-      // Double click zoom toggle
-      stage.addEventListener("dblclick", (e) => {
-        const target = scale < 2 ? 2.5 : 1;
-        scale = target;
-        tx = 0;
-        ty = 0;
-        applyTransform();
-      });
+      async function loadImage(url) {
+        return new Promise((resolve, reject) => {
+          const img = new Image();
+          img.crossOrigin = "anonymous";
+          img.onload = () => resolve(img);
+          img.onerror = reject;
+          img.src = url;
+        });
+      }
 
-      // Buttons
-      zoomInBtn.addEventListener("click", () => zoomBy(0.2));
-      zoomOutBtn.addEventListener("click", () => zoomBy(-0.2));
-      resetZoomBtn.addEventListener("click", resetZoomToFit);
-      closeBtn.addEventListener("click", closeLightbox);
-      nextBtn.addEventListener("click", nextPhoto);
-      prevBtn.addEventListener("click", prevPhoto);
+      function renderPeopleClusters(clusters) {
+        peopleRow.innerHTML = "";
 
-      // Close on backdrop click
-      lightbox.addEventListener("click", (e) => {
-        if (e.target === lightbox || e.target.classList.contains("bg-black/70")) closeLightbox();
-      });
-
-      // Keyboard shortcuts
-      window.addEventListener("keydown", (e) => {
-        if (lightbox.classList.contains("hidden")) {
-          // global shortcuts
-          if (e.key === "/") {
-            e.preventDefault();
-            searchInput.focus();
-          }
+        if (!clusters.length) {
+          peopleRow.innerHTML = `<p class="text-xs text-zinc-400">No faces found in these images.</p>`;
           return;
         }
 
-        if (e.key === "Escape") closeLightbox();
-        if (e.key === "ArrowRight") nextPhoto();
-        if (e.key === "ArrowLeft") prevPhoto();
-        if (e.key === "+" || e.key === "=") zoomBy(0.2);
-        if (e.key === "-") zoomBy(-0.2);
-      });
+        // Sort by count desc
+        const sorted = [...clusters].sort((a, b) => b.photoIds.size - a.photoIds.size);
 
-      // --- Controls: search/sort/select ---
-      searchInput.addEventListener("input", (e) => {
-        query = e.target.value;
-        render();
-      });
+        for (const c of sorted) {
+          const count = c.photoIds.size;
+          const card = document.createElement("button");
+          card.className =
+            "flex flex-col items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 py-3 hover:bg-white/10 min-w-[110px]";
+          card.innerHTML = `
+            <img src="${c.thumb}" class="h-16 w-16 rounded-full object-cover border border-white/10" alt="person"/>
+            <div class="text-center">
+              <p class="text-xs font-semibold text-zinc-100">Person ${c.clusterId}</p>
+              <p class="text-[11px] text-zinc-400">${count} photos</p>
+            </div>
+          `;
+          card.addEventListener("click", () => {
+            peopleFilter = c.clusterId;
+            render();
+          });
+          peopleRow.appendChild(card);
+        }
+      }
+
+      async function analyzeFaces() {
+        if (analyzing) return;
+        analyzing = true;
+        analyzeBtn.disabled = true;
+        analyzeBtn.classList.add("opacity-60", "cursor-not-allowed");
+
+        peopleSub.textContent = "Analyzing… (this is CPU-heavy, because browsers aren’t magic).";
+        setProgress(0, "Starting…");
+
+        try {
+          await loadModelsOnce();
+
+          const thresholdValue = Number(threshold.value);
+
+          const clusters = []; // { clusterId, descriptors: [Float32Array], mean: Float32Array, photoIds:Set, thumb:string }
+          const photoFaces = new Map(); // photoId -> [clusterId...]
+
+          const options = new faceapi.TinyFaceDetectorOptions({
+            inputSize: 416, // higher = more accurate, slower
+            scoreThreshold: 0.5
+          });
+
+          for (let i = 0; i < photos.length; i++) {
+            const p = photos[i];
+            setProgress(10 + (i / photos.length) * 80, `Scanning ${i + 1}/${photos.length}`);
+
+            const img = await loadImage(p.fullSrc);
+
+            // detect faces + descriptors
+            const detections = await faceapi
+              .detectAllFaces(img, options)
+              .withFaceLandmarks(true)
+              .withFaceDescriptors();
+
+            if (!detections.length) continue;
+
+            const assigned = [];
+            for (const det of detections) {
+              const desc = det.descriptor;
+
+              // find best cluster
+              let best = null;
+              let bestDist = Infinity;
+
+              for (const c of clusters) {
+                const dist = euclideanDistance(c.mean, desc);
+                if (dist < bestDist) {
+                  bestDist = dist;
+                  best = c;
+                }
+              }
+
+              if (best && bestDist <= thresholdValue) {
+                best.descriptors.push(desc);
+                best.mean = meanDescriptor(best.descriptors);
+                best.photoIds.add(String(p.id));
+                assigned.push(best.clusterId);
+              } else {
+                const newId = clusters.length + 1;
+                const box = det.detection.box;
+                const thumbData = cropFaceThumb(img, box, 96);
+
+                clusters.push({
+                  clusterId: newId,
+                  descriptors: [desc],
+                  mean: desc,
+                  photoIds: new Set([String(p.id)]),
+                  thumb: thumbData,
+                });
+                assigned.push(newId);
+              }
+            }
+
+            // record which clusters appear in this photo
+            const key = String(p.id);
+            const uniq = Array.from(new Set(assigned));
+            photoFaces.set(key, uniq);
+          }
+
+          faceIndex = { clusters, photoFaces };
+
+          setProgress(100, "Done");
+          peopleSub.textContent = `Found ${clusters.length} people clusters. Click a person to filter.`;
+          renderPeopleClusters(clusters);
+        } catch (err) {
+          console.error(err);
+          peopleSub.textContent = "Face analysis failed. Try running via Live Server (CORS/local file issues).";
+          setProgress(0, "Error");
+        } finally {
+          analyzing = false;
+          analyzeBtn.disabled = false;
+          analyzeBtn.classList.remove("opacity-60", "cursor-not-allowed");
+        }
+      }
+
+      // ---------------------------
+      // Event wiring
+      // ---------------------------
+      if (searchInput) {
+        searchInput.addEventListener("input", (e) => {
+          query = e.target.value;
+          render();
+        });
+      }
 
       clearSearch.addEventListener("click", () => {
         query = "";
-        searchInput.value = "";
+        if (searchInput) searchInput.value = "";
         render();
       });
 
-      chipAll.addEventListener("click", () => setChip("all"));
-      chipPeople.addEventListener("click", () => setChip("people"));
-      chipPlaces.addEventListener("click", () => setChip("places"));
-      chipThings.addEventListener("click", () => setChip("things"));
+      peopleToggle.addEventListener("click", () => {
+        peopleDrawer.classList.toggle("hidden");
+      });
 
-      sortSelect.addEventListener("change", (e) => {
-        sort = e.target.value;
+      analyzeBtn.addEventListener("click", analyzeFaces);
+
+      clearPeopleFilter.addEventListener("click", () => {
+        peopleFilter = null;
         render();
       });
 
-      selectToggle.addEventListener("click", () => setSelectMode(!selectMode));
-
-      selectAllBtn.addEventListener("click", () => {
-        filtered.forEach((p) => selected.add(p.id));
-        updateSelectionUI();
-        render();
+      threshold.addEventListener("input", () => {
+        thresholdVal.textContent = Number(threshold.value).toFixed(2);
       });
 
-      clearSelectionBtn.addEventListener("click", () => {
-        selected.clear();
-        updateSelectionUI();
-        render();
-      });
+      closeBtn.addEventListener("click", closeViewer);
+      backdrop.addEventListener("click", closeViewer);
 
-      // --- Upload (local images) ---
-      uploadBtn.addEventListener("click", () => fileInput.click());
-      fileInput.addEventListener("change", async (e) => {
-        const files = Array.from(e.target.files || []);
-        if (!files.length) return;
+      nextBtn.addEventListener("click", next);
+      prevBtn.addEventListener("click", prev);
+      nextZone.addEventListener("click", next);
+      prevZone.addEventListener("click", prev);
 
-        const now = new Date();
-        const y = now.getFullYear();
-        const m = String(now.getMonth() + 1).padStart(2, "0");
-        const d = String(now.getDate()).padStart(2, "0");
-        const hh = String(now.getHours()).padStart(2, "0");
-        const mm = String(now.getMinutes()).padStart(2, "0");
-
-        // Show loading state
-        uploadBtn.textContent = "Uploading...";
-        uploadBtn.disabled = true;
-
-        for (const file of files) {
-          try {
-            // Convert to base64
-            const base64 = await new Promise((resolve, reject) => {
-              const reader = new FileReader();
-              reader.onload = () => resolve(reader.result);
-              reader.onerror = reject;
-              reader.readAsDataURL(file);
-            });
-
-            photos.unshift({
-              id: "img_" + Date.now() + "_" + Math.random().toString(16).slice(2),
-              title: file.name.replace(/\.[^/.]+$/, ""),
-              place: "Uploaded",
-              date: `${y}-${m}-${d}`,
-              time: `${hh}:${mm}`,
-              tags: ["things"],
-              src: base64,
-            });
-          } catch (error) {
-            console.error("Failed to upload", file.name, error);
-          }
+      window.addEventListener("keydown", (e) => {
+        if (!viewer.classList.contains("hidden")) {
+          if (e.key === "Escape") closeViewer();
+          if (e.key === "ArrowRight") next();
+          if (e.key === "ArrowLeft") prev();
         }
-
-        savePhotos();
-        fileInput.value = "";
-        uploadBtn.textContent = "Upload";
-        uploadBtn.disabled = false;
-        render();
-      });
-
-      // Mobile actions
-      mobileSelect.addEventListener("click", () => setSelectMode(!selectMode));
-      mobileUpload.addEventListener("click", () => fileInput.click());
-      mobileSort.addEventListener("click", () => {
-        sort = sort === "newest" ? "oldest" : "newest";
-        if (sortSelect) sortSelect.value = sort;
-        render();
-      });
-      mobileClear.addEventListener("click", () => {
-        query = "";
-        searchInput.value = "";
-        setChip("all");
-        render();
       });
 
       // Init
+      thresholdVal.textContent = Number(threshold.value).toFixed(2);
       render();
     </script>
   </body>
