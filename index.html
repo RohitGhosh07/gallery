@@ -1,0 +1,540 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Photos - Google Photos Style UI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      @keyframes shimmer {
+        0% { background-position: -1000px 0; }
+        100% { background-position: 1000px 0; }
+      }
+      .shimmer {
+        animation: shimmer 2s infinite;
+        background: linear-gradient(to right, #27272a 0%, #3f3f46 20%, #27272a 40%, #27272a 100%);
+        background-size: 1000px 100%;
+      }
+      .photo-card {
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      .photo-card:hover {
+        transform: scale(1.02);
+      }
+      body {
+        padding-bottom: env(safe-area-inset-bottom);
+      }
+    </style>
+  </head>
+
+  <body class="bg-white text-gray-900 dark:bg-zinc-950 dark:text-zinc-100">
+    <!-- Top Bar -->
+    <header class="sticky top-0 z-50 border-b border-gray-200 bg-white/95 backdrop-blur dark:border-white/10 dark:bg-zinc-950/95">
+      <div class="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3">
+        <div class="flex items-center gap-3">
+          <svg viewBox="0 0 24 24" class="h-7 w-7 text-blue-600 dark:text-blue-500">
+            <path fill="currentColor" d="M13,9H18.5L13,3.5V9M6,2H14L20,8V20A2,2 0 0,1 18,22H6C4.89,22 4,21.1 4,20V4C4,2.89 4.89,2 6,2M10.5,11C9.67,11 9,11.67 9,12.5C9,13.33 9.67,14 10.5,14C11.33,14 12,13.33 12,12.5C12,11.67 11.33,11 10.5,11M13,17H8V16C8,14.67 10.67,14 12,14C13.33,14 16,14.67 16,16V17H13Z" />
+          </svg>
+          <h1 class="text-xl font-medium text-gray-900 dark:text-white">Photos</h1>
+        </div>
+
+        <div class="ml-auto flex items-center gap-3">
+          <button class="hidden rounded-full p-2 hover:bg-gray-100 dark:hover:bg-white/10 md:block">
+            <svg class="h-5 w-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+          </button>
+          <button class="rounded-full p-2 hover:bg-gray-100 dark:hover:bg-white/10">
+            <svg class="h-5 w-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+            </svg>
+          </button>
+          <div class="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600"></div>
+        </div>
+      </div>
+
+      <!-- Search Bar -->
+      <div class="mx-auto max-w-7xl px-4 pb-3">
+        <div class="flex items-center gap-3 rounded-full border border-gray-200 bg-gray-50 px-5 py-2 dark:border-white/10 dark:bg-white/5">
+          <svg class="h-5 w-5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+          <input
+            class="w-full bg-transparent text-sm outline-none placeholder:text-gray-500 dark:placeholder:text-gray-500"
+            placeholder="Search your photos"
+          />
+          <div class="hidden items-center gap-2 md:flex">
+            <button class="rounded-full bg-gray-200 px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-300 dark:bg-white/10 dark:text-gray-300 dark:hover:bg-white/20">
+              Photos
+            </button>
+            <button class="rounded-full px-3 py-1 text-xs font-medium text-gray-600 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-white/10">
+              Albums
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Layout -->
+    <div class="mx-auto grid max-w-7xl grid-cols-1 gap-6 px-4 py-6 lg:grid-cols-[240px_1fr]">
+      <!-- Sidebar -->
+      <aside class="hidden lg:block">
+        <nav class="sticky top-32 space-y-1">
+          <a href="#" class="flex items-center gap-3 rounded-full bg-blue-50 px-4 py-3 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+            </svg>
+            <span class="text-sm font-medium">Photos</span>
+            <span class="ml-auto text-xs">2,847</span>
+          </a>
+
+          <a href="#" class="flex items-center gap-3 rounded-full px-4 py-3 text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+            </svg>
+            <span class="text-sm font-medium">Albums</span>
+            <span class="ml-auto text-xs">32</span>
+          </a>
+
+          <a href="#" class="flex items-center gap-3 rounded-full px-4 py-3 text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+            </svg>
+            <span class="text-sm font-medium">Favorites</span>
+            <span class="ml-auto text-xs">127</span>
+          </a>
+
+          <a href="#" class="flex items-center gap-3 rounded-full px-4 py-3 text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/>
+            </svg>
+            <span class="text-sm font-medium">Archive</span>
+          </a>
+
+          <a href="#" class="flex items-center gap-3 rounded-full px-4 py-3 text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+            </svg>
+            <span class="text-sm font-medium">Trash</span>
+          </a>
+
+          <hr class="my-4 border-gray-200 dark:border-white/10" />
+
+          <div class="rounded-2xl border border-gray-200 bg-gray-50 p-4 dark:border-white/10 dark:bg-white/5">
+            <div class="mb-3 flex items-center justify-between">
+              <p class="text-sm font-semibold text-gray-900 dark:text-white">Storage</p>
+              <svg class="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+            </div>
+            <p class="text-xs text-gray-600 dark:text-gray-400">12.4 GB of 15 GB used</p>
+            <div class="mt-3 h-2 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-white/10">
+              <div class="h-full w-[83%] rounded-full bg-gradient-to-r from-blue-500 to-purple-600"></div>
+            </div>
+            <button class="mt-4 w-full rounded-full border border-blue-600 bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
+              Get more storage
+            </button>
+          </div>
+        </nav>
+      </aside>
+
+      <!-- Main Content -->
+      <main class="space-y-10 pb-20 lg:pb-10">
+        <!-- Today Section -->
+        <section>
+          <div class="sticky top-32 z-10 mb-4 flex items-center justify-between bg-white/95 py-2 backdrop-blur dark:bg-zinc-950/95">
+            <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">Today</h2>
+            <div class="flex items-center gap-2">
+              <button class="rounded-full p-2 hover:bg-gray-100 dark:hover:bg-white/10">
+                <svg class="h-5 w-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-1 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+            <!-- Photo 1 -->
+            <a href="#" class="photo-card group relative aspect-square overflow-hidden bg-gray-100 dark:bg-gray-800">
+              <img src="https://images.unsplash.com/photo-1682687220742-aba13b6e50ba?w=400&h=400&fit=crop" alt="Nature" class="h-full w-full object-cover" loading="lazy" />
+              <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                <div class="absolute right-2 top-2 flex gap-1">
+                  <button class="rounded-full bg-white/20 p-2 backdrop-blur-sm hover:bg-white/30">
+                    <svg class="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                    </svg>
+                  </button>
+                  <button class="rounded-full bg-white/20 p-2 backdrop-blur-sm hover:bg-white/30">
+                    <svg class="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/>
+                    </svg>
+                  </button>
+                </div>
+                <div class="absolute bottom-0 left-0 right-0 p-3">
+                  <p class="text-xs font-medium text-white">2:35 PM</p>
+                </div>
+              </div>
+            </a>
+
+            <!-- Photo 2 -->
+            <a href="#" class="photo-card group relative aspect-square overflow-hidden bg-gray-100 dark:bg-gray-800">
+              <img src="https://images.unsplash.com/photo-1682687981922-7b55dbb30892?w=400&h=400&fit=crop" alt="City" class="h-full w-full object-cover" loading="lazy" />
+              <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                <div class="absolute right-2 top-2">
+                  <button class="rounded-full bg-white/20 p-2 backdrop-blur-sm hover:bg-white/30">
+                    <svg class="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                    </svg>
+                  </button>
+                </div>
+                <div class="absolute bottom-0 left-0 right-0 p-3">
+                  <p class="text-xs font-medium text-white">1:22 PM</p>
+                </div>
+              </div>
+            </a>
+
+            <!-- Photo 3 -->
+            <a href="#" class="photo-card group relative aspect-square overflow-hidden bg-gray-100 dark:bg-gray-800">
+              <img src="https://images.unsplash.com/photo-1682695796954-bad0d0f59ff1?w=400&h=400&fit=crop" alt="Portrait" class="h-full w-full object-cover" loading="lazy" />
+              <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                <div class="absolute right-2 top-2">
+                  <button class="rounded-full bg-white/20 p-2 backdrop-blur-sm hover:bg-white/30">
+                    <svg class="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                    </svg>
+                  </button>
+                </div>
+                <div class="absolute bottom-0 left-0 right-0 p-3">
+                  <p class="text-xs font-medium text-white">11:45 AM</p>
+                </div>
+              </div>
+            </a>
+
+            <!-- Photo 4 -->
+            <a href="#" class="photo-card group relative aspect-square overflow-hidden bg-gray-100 dark:bg-gray-800">
+              <img src="https://images.unsplash.com/photo-1682695797221-8164ff1fafc9?w=400&h=400&fit=crop" alt="Food" class="h-full w-full object-cover" loading="lazy" />
+              <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                <div class="absolute right-2 top-2">
+                  <button class="rounded-full bg-white/20 p-2 backdrop-blur-sm hover:bg-white/30">
+                    <svg class="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                    </svg>
+                  </button>
+                </div>
+                <div class="absolute bottom-0 left-0 right-0 p-3">
+                  <p class="text-xs font-medium text-white">10:15 AM</p>
+                </div>
+              </div>
+            </a>
+
+            <!-- Photo 5 -->
+            <a href="#" class="photo-card group relative aspect-square overflow-hidden bg-gray-100 dark:bg-gray-800">
+              <img src="https://images.unsplash.com/photo-1682686581221-c126206d12f0?w=400&h=400&fit=crop" alt="Travel" class="h-full w-full object-cover" loading="lazy" />
+              <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                <div class="absolute right-2 top-2">
+                  <button class="rounded-full bg-white/20 p-2 backdrop-blur-sm hover:bg-white/30">
+                    <svg class="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                    </svg>
+                  </button>
+                </div>
+                <div class="absolute bottom-0 left-0 right-0 p-3">
+                  <p class="text-xs font-medium text-white">9:30 AM</p>
+                </div>
+              </div>
+            </a>
+
+            <!-- Photo 6 -->
+            <a href="#" class="photo-card group relative aspect-square overflow-hidden bg-gray-100 dark:bg-gray-800">
+              <img src="https://images.unsplash.com/photo-1682695798256-28a487e6a96e?w=400&h=400&fit=crop" alt="Architecture" class="h-full w-full object-cover" loading="lazy" />
+              <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                <div class="absolute right-2 top-2">
+                  <button class="rounded-full bg-white/20 p-2 backdrop-blur-sm hover:bg-white/30">
+                    <svg class="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                    </svg>
+                  </button>
+                </div>
+                <div class="absolute bottom-0 left-0 right-0 p-3">
+                  <p class="text-xs font-medium text-white">8:00 AM</p>
+                </div>
+              </div>
+            </a>
+
+            <!-- Photo 7 -->
+            <a href="#" class="photo-card group relative aspect-square overflow-hidden bg-gray-100 dark:bg-gray-800">
+              <img src="https://images.unsplash.com/photo-1682687220063-4742bd7fd538?w=400&h=400&fit=crop" alt="Landscape" class="h-full w-full object-cover" loading="lazy" />
+              <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                <div class="absolute right-2 top-2">
+                  <button class="rounded-full bg-white/20 p-2 backdrop-blur-sm hover:bg-white/30">
+                    <svg class="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                    </svg>
+                  </button>
+                </div>
+                <div class="absolute bottom-0 left-0 right-0 p-3">
+                  <p class="text-xs font-medium text-white">7:15 AM</p>
+                </div>
+              </div>
+            </a>
+
+            <!-- Photo 8 -->
+            <a href="#" class="photo-card group relative aspect-square overflow-hidden bg-gray-100 dark:bg-gray-800">
+              <img src="https://images.unsplash.com/photo-1682687220198-88e9bdea9931?w=400&h=400&fit=crop" alt="Abstract" class="h-full w-full object-cover" loading="lazy" />
+              <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                <div class="absolute right-2 top-2">
+                  <button class="rounded-full bg-white/20 p-2 backdrop-blur-sm hover:bg-white/30">
+                    <svg class="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                    </svg>
+                  </button>
+                </div>
+                <div class="absolute bottom-0 left-0 right-0 p-3">
+                  <p class="text-xs font-medium text-white">6:45 AM</p>
+                </div>
+              </div>
+            </a>
+          </div>
+        </section>
+
+        <!-- Yesterday Section -->
+        <section>
+          <div class="sticky top-32 z-10 mb-4 flex items-center justify-between bg-white/95 py-2 backdrop-blur dark:bg-zinc-950/95">
+            <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">Yesterday</h2>
+            <p class="text-sm text-gray-500 dark:text-gray-400">Feb 10, 2026</p>
+          </div>
+
+          <div class="grid grid-cols-2 gap-1 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+            <a href="#" class="photo-card group relative aspect-square overflow-hidden bg-gray-100 dark:bg-gray-800">
+              <img src="https://images.unsplash.com/photo-1682687220742-aba13b6e50ba?w=400&h=400&fit=crop&sat=-100" alt="Sunset" class="h-full w-full object-cover" loading="lazy" />
+              <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                <div class="absolute right-2 top-2">
+                  <button class="rounded-full bg-white/20 p-2 backdrop-blur-sm hover:bg-white/30">
+                    <svg class="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </a>
+
+            <a href="#" class="photo-card group relative aspect-square overflow-hidden bg-gray-100 dark:bg-gray-800">
+              <img src="https://images.unsplash.com/photo-1682687982501-1e58ab814714?w=400&h=400&fit=crop" alt="Beach" class="h-full w-full object-cover" loading="lazy" />
+              <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                <div class="absolute right-2 top-2">
+                  <button class="rounded-full bg-white/20 p-2 backdrop-blur-sm hover:bg-white/30">
+                    <svg class="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </a>
+
+            <a href="#" class="photo-card group relative aspect-square overflow-hidden bg-gray-100 dark:bg-gray-800">
+              <img src="https://images.unsplash.com/photo-1682687982167-d7fb3ed8541d?w=400&h=400&fit=crop" alt="Mountains" class="h-full w-full object-cover" loading="lazy" />
+              <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                <div class="absolute right-2 top-2">
+                  <button class="rounded-full bg-white/20 p-2 backdrop-blur-sm hover:bg-white/30">
+                    <svg class="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </a>
+
+            <a href="#" class="photo-card group relative aspect-square overflow-hidden bg-gray-100 dark:bg-gray-800">
+              <img src="https://images.unsplash.com/photo-1682695796497-31a44224d6d6?w=400&h=400&fit=crop" alt="Coffee" class="h-full w-full object-cover" loading="lazy" />
+              <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                <div class="absolute right-2 top-2">
+                  <button class="rounded-full bg-white/20 p-2 backdrop-blur-sm hover:bg-white/30">
+                    <svg class="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </a>
+
+            <a href="#" class="photo-card group relative aspect-square overflow-hidden bg-gray-100 dark:bg-gray-800">
+              <img src="https://images.unsplash.com/photo-1682695795255-b236b1f1267d?w=400&h=400&fit=crop" alt="Wildlife" class="h-full w-full object-cover" loading="lazy" />
+              <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                <div class="absolute right-2 top-2">
+                  <button class="rounded-full bg-white/20 p-2 backdrop-blur-sm hover:bg-white/30">
+                    <svg class="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </a>
+
+            <a href="#" class="photo-card group relative aspect-square overflow-hidden bg-gray-100 dark:bg-gray-800">
+              <img src="https://images.unsplash.com/photo-1682687982029-edb9aecf5f89?w=400&h=400&fit=crop" alt="Street" class="h-full w-full object-cover" loading="lazy" />
+              <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                <div class="absolute right-2 top-2">
+                  <button class="rounded-full bg-white/20 p-2 backdrop-blur-sm hover:bg-white/30">
+                    <svg class="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </a>
+
+            <a href="#" class="photo-card group relative aspect-square overflow-hidden bg-gray-100 dark:bg-gray-800">
+              <img src="https://images.unsplash.com/photo-1682687982134-2ac563b2228b?w=400&h=400&fit=crop" alt="Art" class="h-full w-full object-cover" loading="lazy" />
+              <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                <div class="absolute right-2 top-2">
+                  <button class="rounded-full bg-white/20 p-2 backdrop-blur-sm hover:bg-white/30">
+                    <svg class="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </a>
+
+            <a href="#" class="photo-card group relative aspect-square overflow-hidden bg-gray-100 dark:bg-gray-800">
+              <img src="https://images.unsplash.com/photo-1682695794816-7b9da18ed470?w=400&h=400&fit=crop" alt="Flowers" class="h-full w-full object-cover" loading="lazy" />
+              <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                <div class="absolute right-2 top-2">
+                  <button class="rounded-full bg-white/20 p-2 backdrop-blur-sm hover:bg-white/30">
+                    <svg class="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </a>
+
+            <a href="#" class="photo-card group relative aspect-square overflow-hidden bg-gray-100 dark:bg-gray-800">
+              <img src="https://images.unsplash.com/photo-1682686581362-796145f8e46d?w=400&h=400&fit=crop" alt="Technology" class="h-full w-full object-cover" loading="lazy" />
+              <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                <div class="absolute right-2 top-2">
+                  <button class="rounded-full bg-white/20 p-2 backdrop-blur-sm hover:bg-white/30">
+                    <svg class="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </a>
+          </div>
+        </section>
+
+        <!-- Last Week Section -->
+        <section>
+          <div class="sticky top-32 z-10 mb-4 flex items-center justify-between bg-white/95 py-2 backdrop-blur dark:bg-zinc-950/95">
+            <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">Last Week</h2>
+            <p class="text-sm text-gray-500 dark:text-gray-400">Feb 3-9, 2026</p>
+          </div>
+
+          <div class="grid grid-cols-3 gap-1 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8">
+            <!-- Smaller grid for older photos -->
+            <a href="#" class="photo-card relative aspect-square overflow-hidden bg-gray-100 dark:bg-gray-800">
+              <img src="https://images.unsplash.com/photo-1682686581264-0b77f8c101c7?w=300&h=300&fit=crop" alt="Photo" class="h-full w-full object-cover" loading="lazy" />
+            </a>
+            <a href="#" class="photo-card relative aspect-square overflow-hidden bg-gray-100 dark:bg-gray-800">
+              <img src="https://images.unsplash.com/photo-1682686580186-b55d2a3c34b5?w=300&h=300&fit=crop" alt="Photo" class="h-full w-full object-cover" loading="lazy" />
+            </a>
+            <a href="#" class="photo-card relative aspect-square overflow-hidden bg-gray-100 dark:bg-gray-800">
+              <img src="https://images.unsplash.com/photo-1682686580024-580519d4b2d2?w=300&h=300&fit=crop" alt="Photo" class="h-full w-full object-cover" loading="lazy" />
+            </a>
+            <a href="#" class="photo-card relative aspect-square overflow-hidden bg-gray-100 dark:bg-gray-800">
+              <img src="https://images.unsplash.com/photo-1682686580003-22d3d65399a8?w=300&h=300&fit=crop" alt="Photo" class="h-full w-full object-cover" loading="lazy" />
+            </a>
+            <a href="#" class="photo-card relative aspect-square overflow-hidden bg-gray-100 dark:bg-gray-800">
+              <img src="https://images.unsplash.com/photo-1682686579688-c62a9f4d0b1f?w=300&h=300&fit=crop" alt="Photo" class="h-full w-full object-cover" loading="lazy" />
+            </a>
+            <a href="#" class="photo-card relative aspect-square overflow-hidden bg-gray-100 dark:bg-gray-800">
+              <img src="https://images.unsplash.com/photo-1682686578615-51f5052f5e3c?w=300&h=300&fit=crop" alt="Photo" class="h-full w-full object-cover" loading="lazy" />
+            </a>
+            <a href="#" class="photo-card relative aspect-square overflow-hidden bg-gray-100 dark:bg-gray-800">
+              <img src="https://images.unsplash.com/photo-1682686578559-7ef0c6affdbb?w=300&h=300&fit=crop" alt="Photo" class="h-full w-full object-cover" loading="lazy" />
+            </a>
+            <a href="#" class="photo-card relative aspect-square overflow-hidden bg-gray-100 dark:bg-gray-800">
+              <img src="https://images.unsplash.com/photo-1682686578456-69ddc994e40e?w=300&h=300&fit=crop" alt="Photo" class="h-full w-full object-cover" loading="lazy" />
+            </a>
+            <a href="#" class="photo-card relative aspect-square overflow-hidden bg-gray-100 dark:bg-gray-800">
+              <img src="https://images.unsplash.com/photo-1682686578289-cf9c8c472c9b?w=300&h=300&fit=crop" alt="Photo" class="h-full w-full object-cover" loading="lazy" />
+            </a>
+            <a href="#" class="photo-card relative aspect-square overflow-hidden bg-gray-100 dark:bg-gray-800">
+              <img src="https://images.unsplash.com/photo-1682686578232-14af046e1e64?w=300&h=300&fit=crop" alt="Photo" class="h-full w-full object-cover" loading="lazy" />
+            </a>
+            <a href="#" class="photo-card relative aspect-square overflow-hidden bg-gray-100 dark:bg-gray-800">
+              <img src="https://images.unsplash.com/photo-1682686578023-dc680e7a3aeb?w=300&h=300&fit=crop" alt="Photo" class="h-full w-full object-cover" loading="lazy" />
+            </a>
+            <a href="#" class="photo-card relative aspect-square overflow-hidden bg-gray-100 dark:bg-gray-800">
+              <img src="https://images.unsplash.com/photo-1682686581498-5e85c7228119?w=300&h=300&fit=crop" alt="Photo" class="h-full w-full object-cover" loading="lazy" />
+            </a>
+            <a href="#" class="photo-card relative aspect-square overflow-hidden bg-gray-100 dark:bg-gray-800">
+              <img src="https://images.unsplash.com/photo-1682686581427-ee61a5d9cdbc?w=300&h=300&fit=crop" alt="Photo" class="h-full w-full object-cover" loading="lazy" />
+            </a>
+            <a href="#" class="photo-card relative aspect-square overflow-hidden bg-gray-100 dark:bg-gray-800">
+              <img src="https://images.unsplash.com/photo-1682686581362-796145f8e46d?w=300&h=300&fit=crop" alt="Photo" class="h-full w-full object-cover" loading="lazy" />
+            </a>
+            <a href="#" class="photo-card relative aspect-square overflow-hidden bg-gray-100 dark:bg-gray-800">
+              <img src="https://images.unsplash.com/photo-1682686581295-9c5e8f0e3eef?w=300&h=300&fit=crop" alt="Photo" class="h-full w-full object-cover" loading="lazy" />
+            </a>
+            <a href="#" class="photo-card relative aspect-square overflow-hidden bg-gray-100 dark:bg-gray-800">
+              <img src="https://images.unsplash.com/photo-1682686581556-1005b96c1ba8?w=300&h=300&fit=crop" alt="Photo" class="h-full w-full object-cover" loading="lazy" />
+            </a>
+            <a href="#" class="photo-card relative aspect-square overflow-hidden bg-gray-100 dark:bg-gray-800">
+              <img src="https://images.unsplash.com/photo-1682687220866-c856f898d66f?w=300&h=300&fit=crop" alt="Photo" class="h-full w-full object-cover" loading="lazy" />
+            </a>
+            <a href="#" class="photo-card relative aspect-square overflow-hidden bg-gray-100 dark:bg-gray-800">
+              <img src="https://images.unsplash.com/photo-1682687220499-d9c06b872eee?w=300&h=300&fit=crop" alt="Photo" class="h-full w-full object-cover" loading="lazy" />
+            </a>
+            <a href="#" class="photo-card relative aspect-square overflow-hidden bg-gray-100 dark:bg-gray-800">
+              <img src="https://images.unsplash.com/photo-1682687220067-dced9a881b56?w=300&h=300&fit=crop" alt="Photo" class="h-full w-full object-cover" loading="lazy" />
+            </a>
+            <a href="#" class="photo-card relative aspect-square overflow-hidden bg-gray-100 dark:bg-gray-800">
+              <img src="https://images.unsplash.com/photo-1682687220923-c58b9a4592ae?w=300&h=300&fit=crop" alt="Photo" class="h-full w-full object-cover" loading="lazy" />
+            </a>
+          </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="py-12 text-center">
+          <p class="text-sm text-gray-500 dark:text-gray-400">You've reached the end of your photos</p>
+          <p class="mt-2 text-xs text-gray-400 dark:text-gray-500">Modern UI inspired by Google Photos • Using Unsplash API for images</p>
+        </footer>
+      </main>
+    </div>
+
+    <!-- Mobile Bottom Navigation -->
+    <nav class="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white/95 backdrop-blur dark:border-white/10 dark:bg-zinc-950/95 lg:hidden">
+      <div class="mx-auto flex max-w-7xl items-center justify-around px-4 py-2">
+        <button class="flex flex-col items-center gap-1 py-2 text-blue-600 dark:text-blue-500">
+          <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+          </svg>
+          <span class="text-[10px] font-medium">Photos</span>
+        </button>
+
+        <button class="flex flex-col items-center gap-1 py-2 text-gray-600 dark:text-gray-400">
+          <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+          <span class="text-[10px] font-medium">Search</span>
+        </button>
+
+        <button class="flex flex-col items-center gap-1 py-2 text-gray-600 dark:text-gray-400">
+          <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+          </svg>
+          <span class="text-[10px] font-medium">Albums</span>
+        </button>
+
+        <button class="flex flex-col items-center gap-1 py-2 text-gray-600 dark:text-gray-400">
+          <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+          </svg>
+          <span class="text-[10px] font-medium">Library</span>
+        </button>
+      </div>
+    </nav>
+  </body>
+</html>
