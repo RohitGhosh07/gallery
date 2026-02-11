@@ -157,6 +157,8 @@
       // Drive helpers
       // =========================================================
       const driveView = (fileId) => `https://drive.google.com/uc?export=view&id=${fileId}`;
+      const PROXY_BASE = "http://localhost:3000/img/";
+      const driveImg = (fileId) => `${PROXY_BASE}${fileId}`;
 
       async function listDriveImages(folderId) {
         // NOTE: This requires the folder/files to be shared as "Anyone with the link: Viewer"
@@ -608,8 +610,8 @@
               id: f.id,
               title: f.name || `Image ${idx + 1}`,
               meta: when ? when : "Drive image",
-              thumbSrc: driveView(f.id),
-              fullSrc: driveView(f.id),
+              thumbSrc: driveImg(f.id),
+              fullSrc: driveImg(f.id),
             };
           });
 
