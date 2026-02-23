@@ -150,7 +150,7 @@
       // =========================================================
       // CONFIG: Put your Google API key here
       // =========================================================
-      const FOLDER_ID = "1T9P69xchFY4_NX7__eg7gXVTOyXT1ppm";
+      const FOLDER_ID = "1cJ6GzFjRre6OmZC6N7C-plic3gT2ndfU";
       const API_KEY = "AIzaSyDq1zUnvwrQoOKh9yJPh38zqz6HOvBvCIU"; // <-- change this
 
       // =========================================================
@@ -208,6 +208,15 @@
       let modelsLoaded = false;
       let analyzing = false;
       let faceIndex = null; // { clusters: [...], photoFaces: Map(photoKey -> [clusterId...]) }
+      let lastScanTime = null;
+      let lastPhotoIds = new Set();
+      
+      // LocalStorage keys
+      const STORAGE_KEYS = {
+        FACE_INDEX: 'gallery_face_index',
+        LAST_SCAN: 'gallery_last_scan',
+        PHOTO_IDS: 'gallery_photo_ids'
+      };
 
       // =========================================================
       // Elements
@@ -240,6 +249,9 @@
 
       const threshold = document.getElementById("threshold");
       const thresholdVal = document.getElementById("thresholdVal");
+      
+      // Auto-refresh interval (30 minutes)
+      const REFRESH_INTERVAL = 30 * 60 * 1000;
 
       // =========================================================
       // Gallery filtering
@@ -348,9 +360,70 @@
       }, { passive: true });
 
       // =========================================================
-      // People (Face detect + cluster)
+      // People (Face detect + cluster) - Auto-scan with persistence
       // =========================================================
       const MODEL_BASE = "https://cdn.jsdelivr.net/npm/@vladmandic/face-api@0.30.5/model/";
+      
+      // Load saved face data from localStorage
+      function loadSavedFaceData() {
+        try {
+          const saved = localStorage.getItem(STORAGE_KEYS.FACE_INDEX);
+          const savedScan = localStorage.getItem(STORAGE_KEYS.LAST_SCAN);
+          const savedIds = localStorage.getItem(STORAGE_KEYS.PHOTO_IDS);
+          
+          if (saved && savedScan) {
+            const data = JSON.parse(saved);
+            // Reconstruct Map and Set objects
+            data.photoFaces = new Map(Object.entries(data.photoFaces));
+            faceIndex = data;
+            lastScanTime = new Date(savedScan);
+            lastPhotoIds = savedIds ? new Set(JSON.parse(savedIds)) : new Set();
+            
+            console.log(`✅ Loaded face data from ${lastScanTime.toLocaleString()}`);
+            peopleSub.textContent = `Loaded ${data.clusters.length} people from cache. Auto-scanning for changes...`;
+            renderPeopleClusters(data.clusters);
+            return true;
+          }
+        } catch (e) {
+          console.error('Failed to load saved face data:', e);
+        }
+        return false;
+      }
+      
+      // Save face data to localStorage
+      function saveFaceData() {
+        try {
+          if (!faceIndex) return;
+          
+          // Convert Map to plain object for JSON
+          const dataToSave = {
+            clusters: faceIndex.clusters,
+            photoFaces: Object.fromEntries(faceIndex.photoFaces)
+          };
+          
+          localStorage.setItem(STORAGE_KEYS.FACE_INDEX, JSON.stringify(dataToSave));
+          localStorage.setItem(STORAGE_KEYS.LAST_SCAN, new Date().toISOString());
+          localStorage.setItem(STORAGE_KEYS.PHOTO_IDS, JSON.stringify(Array.from(lastPhotoIds)));
+          
+          console.log('✅ Face data saved to cache');
+        } catch (e) {
+          console.error('Failed to save face data:', e);
+        }
+      }
+      
+      // Check if we have new photos that need scanning
+      function hasNewPhotos() {
+        const currentIds = new Set(photos.map(p => String(p.id)));
+        
+        // Check if any new photos exist
+        for (const id of currentIds) {
+          if (!lastPhotoIds.has(id)) {
+            return true;
+          }
+        }
+        
+        return false;
+      }
 
       function setProgress(pct, label) {
         progressBar.style.width = `${Math.max(0, Math.min(100, pct))}%`;
@@ -443,7 +516,7 @@
         }
       }
 
-      async function analyzeFaces() {
+      async function analyzeFaces(isAutoScan = false) {
         if (analyzing) return;
         if (!photos.length) {
           peopleSub.textContent = "No photos loaded yet. Fix Drive loading first.";
@@ -454,7 +527,8 @@
         analyzeBtn.disabled = true;
         analyzeBtn.classList.add("opacity-60", "cursor-not-allowed");
 
-        peopleSub.textContent = "Analyzing… this can take a bit depending on image count and your machine.";
+        const scanType = isAutoScan ? "Auto-scanning" : "Analyzing";
+        peopleSub.textContent = `${scanType}… this can take a bit depending on image count and your machine.`;
         setProgress(0, "Starting…");
 
         try {
@@ -525,9 +599,14 @@
           }
 
           faceIndex = { clusters, photoFaces };
+          
+          // Update tracking and save to localStorage
+          lastPhotoIds = new Set(photos.map(p => String(p.id)));
+          lastScanTime = new Date();
+          saveFaceData();
 
           setProgress(100, "Done");
-          peopleSub.textContent = `Found ${clusters.length} face clusters. Click a person to filter.`;
+          peopleSub.textContent = `Found ${clusters.length} people. Click a person to filter. Auto-refresh in 30 min.`;
           renderPeopleClusters(clusters);
         } catch (err) {
           console.error(err);
@@ -552,7 +631,16 @@
       }
 
       clearSearch.addEventListener("click", () => {
-        query = "";
+        const wasHidden = peopleDrawer.classList.contains("hidden");
+        peopleDrawer.classList.toggle("hidden");
+        
+        // Auto-load saved data when opening People drawer for first time
+        if (wasHidden && !faceIndex && !analyzing) {
+          const loaded = loadSavedFaceData();
+          if (!loaded) {
+            peopleSub.textContent = "Click 'Analyze faces' to scan all photos (happens automatically on load).";
+          }
+        }
         if (searchInput) searchInput.value = "";
         render();
       });
@@ -589,7 +677,48 @@
       });
 
       // =========================================================
-      // Boot: Load Drive images, then render
+      // Auto-refresh: Check for new images every 30 minutes
+      // =========================================================
+      async function checkForNewImages() {
+        try {
+          console.log('🔄 Checking for new images...');
+          const files = await listDriveImages(FOLDER_ID);
+          
+          const newPhotos = files.map((f, idx) => {
+            const when = (f.modifiedTime || f.createdTime || "").slice(0, 10);
+            return {
+              id: f.id,
+              title: f.name || `Image ${idx + 1}`,
+              meta: when ? when : "Drive image",
+              thumbSrc: driveImg(f.id),
+              fullSrc: driveImg(f.id),
+            };
+          });
+          
+          const oldCount = photos.length;
+          photos = newPhotos;
+          
+          if (newPhotos.length > oldCount) {
+            statusLine.textContent = `✨ Found ${newPhotos.length - oldCount} new images! Auto-scanning faces...`;
+            render();
+            
+            // Auto-scan if we have new photos
+            if (modelsLoaded && hasNewPhotos()) {
+              await analyzeFaces(true);
+            }
+          } else if (newPhotos.length < oldCount) {
+            statusLine.textContent = `Some images were removed. Refreshed gallery.`;
+            render();
+          } else {
+            console.log('✅ No new images found');
+          }
+        } catch (e) {
+          console.error('Auto-refresh failed:', e);
+        }
+      }
+
+      // =========================================================
+      // Boot: Load Drive images, then auto-scan faces
       // =========================================================
       async function boot() {
         thresholdVal.textContent = Number(threshold.value).toFixed(2);
@@ -617,6 +746,33 @@
 
           statusLine.textContent = `Loaded ${photos.length} Drive images.`;
           render();
+          
+          // Auto-load saved face data
+          const hasSavedData = loadSavedFaceData();
+          
+          // Auto-scan faces if: no saved data OR new photos detected
+          if (!hasSavedData || hasNewPhotos()) {
+            console.log('🤖 Auto-starting face analysis...');
+            statusLine.textContent = `Loaded ${photos.length} images. Auto-scanning faces...`;
+            
+            // Load models and analyze in background
+            setTimeout(async () => {
+              try {
+                await loadModelsOnce();
+                await analyzeFaces(true);
+              } catch (e) {
+                console.error('Auto-scan failed:', e);
+                peopleSub.textContent = "Auto-scan failed. Click 'Analyze faces' to retry.";
+              }
+            }, 1000);
+          } else {
+            statusLine.textContent = `Loaded ${photos.length} images. Face data loaded from cache.`;
+          }
+          
+          // Set up 30-minute auto-refresh
+          setInterval(checkForNewImages, REFRESH_INTERVAL);
+          console.log('⏰ Auto-refresh enabled (every 30 minutes)');
+          
         } catch (e) {
           console.error(e);
           statusLine.textContent = "Drive load failed. Check: API key, Drive API enabled, folder shared publicly.";

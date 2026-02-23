@@ -8,6 +8,8 @@ A modern, responsive image gallery that loads photos from Google Drive with adva
 - 🔍 **Search & filter** by filename or date
 - 🖼️ **Fullscreen viewer** with swipe/keyboard navigation
 - 👤 **Face detection & clustering** - automatically group photos by people
+- 💾 **Smart caching** - saves face scan results, loads instantly on refresh
+- 🔄 **Auto-refresh** - checks for new images every 30 minutes
 - 🎨 **Modern UI** built with Tailwind CSS
 - 🚫 **CORS-free** - proxy server handles Drive API restrictions
 
@@ -83,9 +85,12 @@ A modern, responsive image gallery that loads photos from Google Drive with adva
 
 ### Face Detection
 1. Click **"People"** button to open panel
-2. Click **"Analyze faces"** to scan all photos
-3. Wait for analysis (can take a few minutes depending on image count)
+2. ✨ **Auto-scans on first load** - face detection runs automatically
+3. **Saved results** - face clusters saved to browser cache, load instantly next time
 4. Click on detected **person clusters** to filter photos by person
+5. **Auto-refresh** - app checks for new images every 30 minutes and re-scans automatically
+
+> **Note**: First scan may take a few minutes depending on image count. Results are cached in localStorage for instant loading on subsequent visits.
 
 ## 🏗️ Architecture
 
@@ -109,7 +114,10 @@ gallery/
 ## 🔍 Face Detection Details
 
 - Uses **face-api.js** library with TinyFaceDetector
-- Creates face embeddings (128D descriptors)
+- Creates face embeddings (128D descriptor
+- **Auto-scans** on first load and when new images detected
+- **Persistent storage** - results saved to localStorage
+- **Smart refresh** - checks Drive every 30 minutes for new photoss)
 - Clusters similar faces using euclidean distance
 - Adjustable matching threshold (default: 0.52)
 - Runs entirely in browser (CPU-intensive)
